@@ -1,5 +1,7 @@
-#Lisp support for defining FPGA structures, simulation support code and firmware compilation
-Time-stamp: <2022-01-11 13:37:45 gorbag>
+#Lisp support for defining FPGA structures
+simulation support code and firmware compilation
+
+Time-stamp: <2022-01-12 14:42:45 gorbag>
 
 After some initial work on simulating the Scheme-79 chip (see the project files), code that could be reused for other
 such FPGA projects is being segregated here. In particular, code for compiling and assembling uPLA code (which is used
@@ -31,7 +33,9 @@ library, though some parts may be suitable for such use in the future!)
   part of both the 'microprogrammer's model' and the actual hardware realization.
     
 Status:
+
 ####1-11-22 BWM
+
 I've segregated and repatriated more code from the simulation directory, particularly dealing with microlisp, and
 made a number of the places where the split between 'project code' and 'general declaration of processor code' into
 generic functions, i.e. the generic code may have high level or default methods for, e.g. compiling a function and the
@@ -39,11 +43,13 @@ project then adds methods to compile code specific to the project. Most of these
 file project-defs.lisp
 
 ####11-19-21 BWM
+
 Additional directories for gui support (simulation) and pla-support (offline tools for generating code for PLAs, i.e.
 microcode or in the case of Scheme-79 at least, also nanocode). The idea is that these tools are run to compile /
 assemble microcode, but then the resultant code (which should be an array of bit vectors) gets "downloaded" into the
 FPGA chip as a read-only memory array.
 
 ####10-21-21 BWM
+
 Segregating code into that which supports both simulation and translation into HDL here.
 

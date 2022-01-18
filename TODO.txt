@@ -1,0 +1,69 @@
+Time-stamp: <2022-01-18 13:03:40 gorbag>
+
+Migrating TODO items that should be done generally rather than specifically for the Scheme-79 project here... 10/21/2021
+
+Next:   
+        
+Future: ooo     implement increment and decrement registers so the normal-run-p crock can be eliminated (NB: as far
+                   as I can tell, that's what the chip did, see figure 3: The Register Array). Similarly as we 
+                   progress toward generating FPGA implementation we may need to do something similar for sense 
+                   conditions (effectively registers that latch features of other registers using dedicated 
+                   combinatoric logic)
+
+        ooo     make the clocking closer to the actual (FPGA) device: on the rising edge we gate into registers.
+                   the rest of the clock allows combinatoric logic that should not have loops (or introduce additional
+                   registers - need not be programmatically accessable). Note that it is bad practice to have
+                   loops in the combinatoric logic (outputs that become inputs to the same function) without
+                   a register intermediary (to make it synchronous) and we may have to diverge from the paper
+                   as many tricks of early ASIC design such as delay chains, asynchronous pulse generators, ripple
+                   counters, etc. are discouraged for FPGAs as the timing analysis generally fails and glitches may
+                   be introduced into the logic. This is particularly important as we currently plan to use HDL as
+                   an intermediary language and want a set of library functions that speed future FPGA development,
+                   rather than an exact emulation of the original SCHEME-79 chip performance! (Note that two phase
+                   clocks ARE supported but typically would be used to synchronize different sets of registers).
+
+                since I'm still an FPGA novice, much of these design issues will have to be learned over time,
+                   however, the current practice of having initialization lists trigger actions on each phase of the
+                   clock is probably going to lead to some difficulty and it may be better to have a V2 simulation
+                   that clearly divides synchronous activities (triggered by the rising edge) and asynchronous
+                   activities (which while they may not be continuous as they are in the electrical circuit, should
+                   at least not have a sequential nature and rather have some kind of "data flow" trigger on
+                   evaluation). That will require a new logic to be applied rather than the existing version which
+                   simply evaluates lisp functions in a particular order to simulate proper interpretation of the
+                   desired functionality and moves us closer to the simulation of the functions on the FPGA itself.
+                   [Note, as of finishing v0.2, I've begun dividing "support" code - stuff independent of the specifics
+                   of the particular chip - into clocked and combinatoric support under the ../support directory, and
+                   slowly repatriating non-chip-specific code there as well as macros that are used to define the
+                   chip. Q.V. one of the other TODO items that list this more specifically.]
+                   
+        ooo*    [starting post V0.2]: to facilitate future projects (e.g. scheme-86, lm3,...) segregate code as follows:
+         +         general library functions that can be reused easily in other projects (candidates for CL-LIB)
+         +         functions useful for emulating processors that will be implemented on FPGAs (i.e. library functions
+                      that appear to be a bit more specific to the purpose of emulating processors)
+         o*        functions that are mostly attuned to the scheme-79 implementation but could be made more general,
+                      hopefully these, like the definition of defufn can be generified and are mostly declarative
+                      in nature
+         o*        general register and combinatoric functions that are not specific to scheme-79 (hopefully have
+                      simple translations into RTL or HDL)
+         +         general compilation and assembler from microcode or nanocode to PLA (stuff that isn't needed for
+                      runtime, but is used to set up the on-board PLAs, i.e. this will just be Lisp code that is
+                      used to generate an array that gets put into the FPGA when it's being built.
+
+
+                   [Note: this should be done generally for PLAs then adapted in the scheme-79 project]
+
+TODONE:
+      in support release
+
+         0.2   The "original" nanocode used an OR structure that allowed the from/to parts to be implemented
+                   separately from the main instruction. I think that would eliminate a lot of the "special-register
+                   specific" instructions since the TO part would just activate the address and type fields, etc rather
+                   than requiring the nanoinstruction to have to do it. So changing how that works would simplify the
+                   code (would no longer need to have <instruction>-<register> kinds of nanocode, nor assemble the
+                   nanocode symbol using format/intern).
+
+         ^^^  [Note that Scheme-79 seems to have had a separate PLA. Rather than implementing the OR structure, I've
+                   made generation of multiple TO control lines for an instruction 'automatic' based on declaration of
+                   covering sets (for fields). I expect this is more general in the sense that we don't have to build
+                   up a detailed PLA but can do so via declaration macros.]
+
