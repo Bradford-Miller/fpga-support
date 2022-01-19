@@ -2,7 +2,7 @@
 (defvar *fpga-support-version-reporter-initializations* nil)
 
 (cl-lib:detailed-version-reporter "FPGA Dev Support packages" 0 1 2
-                                  "Time-stamp: <2022-01-18 12:01:31 gorbag>"
+                                  "Time-stamp: <2022-01-19 13:18:45 gorbag>"
                                   "remove special-register-p"
                                   :initialization-list-symbol *fpga-support-version-reporter-initializations*)
 
@@ -188,7 +188,6 @@
   (:documentation "language symbols we commonly have to import explicitly from microlisp pkg")
   (:import-from common-lisp t nil)
   (:export
-   ;; commonly used within the (compiled) code (probably should have a way to declare these; TBD)
    #:from #:to #:go-to #:branch #:branch-type #:from-type-const #:from-const #:tag
    #:sense-and-branch #:sense-type-and-branch ; nano-operations
    

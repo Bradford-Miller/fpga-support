@@ -1,7 +1,7 @@
 (in-package :microlisp-int)
 
 (fpga-support-version-reporter "FPGA PLA ulisp Validator" 0 1 3
-                               "Time-stamp: <2022-01-18 12:35:26 gorbag>"
+                               "Time-stamp: <2022-01-19 13:27:44 gorbag>"
                                "cleanup special-register-p")
 
 ;; 0.1.2   1/18/22 cleanup obsolete code: removing special treatment of registers
@@ -42,7 +42,7 @@
 ;; NB: we side effect some symbols defined in the microcode such that
 ;; we can easily look up their definitions for simulation or the
 ;; console/debug capabilies. When we start to emit HDL (TBD) that
-;; information would be lost (in the HDL) unless it is copied into a
+;; information will be lost (in the HDL) unless it is copied into a
 ;; PLA itself (we don't expect the FPGA to online validate its own
 ;; microcode, however, so this is more a note to myself about being
 ;; hygenic when building out the HDL production code).

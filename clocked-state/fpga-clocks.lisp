@@ -1,8 +1,10 @@
 (in-package :fpga-clocked)
 
-(fpga-support-version-reporter "FPGA Clock Support" 0 1 1
-                               "Time-stamp: <2022-01-14 12:24:58 gorbag>"
-                               "note neutral clock phase usage")
+(fpga-support-version-reporter "FPGA Clock Support" 0 1 2
+                               "Time-stamp: <2022-01-19 14:21:59 gorbag>"
+                               "add validation for clock phase usage")
+
+;; 0.1.2   1/19/22 add validation code for clock phase usage
 
 ;; 0.1.1   1/14/22 change from warn to note-if *debug-pad-timing* the
 ;;                   warning about using a neutral clock phase for an
@@ -276,11 +278,13 @@ due to minimum validity times; we can sort that out later")
   "Trigger just before the phase change starts, i.e. BEFORE the *symbolic-clock-phase* is updated and BEFORE
 any phase specific initialization lists are called.")
 
-;; translate between a keyword and the initialization list name. We can add a check (TBD) that the list we are trying
-;; to access is in fact valid for our currently configured clock.
-
+;; translate between a keyword and the initialization list name. 
 
 (defun init-list-name (clock-phase)
+  ;; don't really need this unless doing low-level debugging
+  ;(assert (member clock-phase (list* :any :all *phase-names*)) (clock-phase)
+  ;        "Selected phase, ~S is not a member of valid phases for configured clock ~S"
+  ;        clock-phase *phase-names*)
   (ecase clock-phase
     ((:ph1 :ph1-high)
      '*ph1-high-list*)
