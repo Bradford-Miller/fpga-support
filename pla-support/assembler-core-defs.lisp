@@ -1,8 +1,12 @@
 (in-package :fpga-pla-build-tools)
 
-(fpga-support-version-reporter "FPGA PLA ulisp Assem. Defs" 0 1 0
-                               "Time-stamp: <2022-01-11 17:03:13 gorbag>"
-                               "0.1 release")
+(fpga-support-version-reporter "FPGA PLA ulisp Assem. Defs" 0 1 1
+                               "Time-stamp: <2022-01-27 14:36:33 gorbag>"
+                               "allow microcontrol-symbol-value to check for errors")
+
+;; 0.1.1   1/27/22 add error-p argument to microcontrol-symbol-value to
+;;                    allow it call error if the argument doesn't have
+;;                    a value in the microcontrol symbol table.
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 0.1.0   1/11/22 snapping a line: 0.1 release of library supports scheme-79 test-0 and test-1. ;;
@@ -92,9 +96,11 @@
   "alist of microcontrol symbols and entry points (offsets into the
   microcontrol array)")
 
-(defun microcontrol-symbol-value (symbol)
+(defun microcontrol-symbol-value (symbol &optional error-p)
   "Look up the value of the symbol in *microcontrol-symtab*"
-  (cdr (assoc symbol *microcontrol-symtab*)))
+  (progfoo (cdr (assoc symbol *microcontrol-symtab*))
+    (if (and error-p (null foo))
+      (error "microcontrol-symbol-value: ~s not found in symtab!" symbol))))
 
 (defun microop-symbol-tagtype (micropc)
   (some #'(lambda (symtab-entry)

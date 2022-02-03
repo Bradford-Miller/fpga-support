@@ -1,7 +1,7 @@
 #Lisp support for defining FPGA structures
 simulation support code and firmware compilation
 
-Time-stamp: <2022-01-12 14:42:45 gorbag>
+Time-stamp: <2022-01-24 17:05:38 gorbag>
 
 After some initial work on simulating the Scheme-79 chip (see the project files), code that could be reused for other
 such FPGA projects is being segregated here. In particular, code for compiling and assembling uPLA code (which is used
@@ -49,7 +49,12 @@ microcode or in the case of Scheme-79 at least, also nanocode). The idea is that
 assemble microcode, but then the resultant code (which should be an array of bit vectors) gets "downloaded" into the
 FPGA chip as a read-only memory array.
 
-####10-21-21 BWM
+####10-21-21 Bradford W. Miller
 
 Segregating code into that which supports both simulation and translation into HDL here.
+
+## Contact
+
+Ideally, posting bugs in the project or repository would be the ideal way to contact me (even if it's just a
+misunderstanding of the documentation). 
 

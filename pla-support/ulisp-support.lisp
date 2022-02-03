@@ -1,8 +1,10 @@
 (in-package :microlisp-int)
 
-(fpga-support-version-reporter "FPGA PLA ulisp Support" 0 1 1
-                               "Time-stamp: <2022-01-14 12:26:36 gorbag>"
-                               "declarations for covering sets on control lines")
+(fpga-support-version-reporter "FPGA PLA ulisp Support" 0 1 2
+                               "Time-stamp: <2022-01-31 17:55:31 gorbag>"
+                               "suppress-logging property")
+
+;; 0.1.2   1/31/22 add suppress-logging property on uops
 
 ;; 0.1.1   1/13/22 add abiility to define covering sets of control lines (see comments)
 
@@ -71,6 +73,8 @@ used."
 (define-property-accessor ucode-precedence :ulisp-ucode-precedence)
 
 (define-property-accessor ucode-constituent :ulisp-ucode-constituent)
+
+(define-property-accessor ucode-suppress-logging :ulisp-ucode-suppress-logging)
 
 ;; some helper functions to access bit encoded values vs. symbolic information
 ;; note these mostly depend on variables set up AFTER the microcode is loaded!

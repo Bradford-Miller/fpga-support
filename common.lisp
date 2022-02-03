@@ -1,9 +1,12 @@
 (in-package :common)
 
-(cl-lib:detailed-version-reporter "FPGA Dev Support Common" 0 1 0
+(cl-lib:detailed-version-reporter "FPGA Dev Support Common" 0 1 1
                                   "Time-stamp: <2022-01-11 13:41:58 gorbag>"
-                                  "0.1 release"
+                                  "fix date-string with leading zero pads"
                                   :initialization-list-symbol cl-user::*fpga-support-version-reporter-initializations*)
+
+;; 0.1.1   1/27/22 date-string should print leading zeros for minutes
+;;                    and seconds!
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 0.1.0   1/11/22 snapping a line: 0.1 release of library supports scheme-79 test-0 and test-1. ;;
@@ -157,9 +160,9 @@
       (:date
        (format nil "~d/~d/~d" month day year))
       (:minute
-       (format nil "~d/~d/~d ~d:~d" month day year hour minute))
+       (format nil "~d/~d/~d ~d:~2,'0d" month day year hour minute))
       (:second
-       (format nil "~d/~d/~d ~d:~d:~d" month day year hour minute second)))))
+       (format nil "~d/~d/~d ~d:~2,'0d:~2,'0d" month day year hour minute second)))))
 
 ;; debug and partial implementation
 

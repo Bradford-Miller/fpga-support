@@ -1,10 +1,17 @@
 (in-package :cl-user)
 (defvar *fpga-support-version-reporter-initializations* nil)
 
-(cl-lib:detailed-version-reporter "FPGA Dev Support packages" 0 1 2
-                                  "Time-stamp: <2022-01-19 13:18:45 gorbag>"
-                                  "remove special-register-p"
+(cl-lib:detailed-version-reporter "FPGA Dev Support packages" 0 1 5
+                                  "Time-stamp: <2022-02-02 17:01:35 gorbag>"
+                                  "upla-write-code upla-write-code-annotation"
                                   :initialization-list-symbol *fpga-support-version-reporter-initializations*)
+
+;; 0.1.5   2/ 2/22 upla-write-code upla-write-code-annotation upla-write-tag
+
+;; 0.1.4   1/31/22 ucode-suppress-logging
+
+;; 0.1.3   1/25/22 export macro tags fail-tag and success-tag so they
+;;                    can be used in the body
 
 ;; 0.1.2   1/18/22 cleanup obsolete code: removing special treatment of registers
 ;;                    which required multiple control lines for TO as new covering
@@ -261,7 +268,7 @@
    #:opcode-fn
    #:upred-p #:upred-desc #:ufun-p #:umac-p
    #:ucode-sense-line #:ucode-pred-type #:ucode-pred-from-register #:ucode-pred-defn
-   #:ucode-precedence #:ucode-constituent
+   #:ucode-precedence #:ucode-constituent #:ucode-suppress-logging
    #:microcodes-used  
 
    #:microcode-symbol #:microcode-declarations
@@ -280,8 +287,9 @@
   (:use :microlisp-int :debug-support :fpga-project-defs :fpga-support :common :cl-lib common-lisp)
   
   (:export
-   #:*upla-stream* #:*upla-file-name*
+   #:*upla-stream* #:*upla-file-name* #:*upla-suppress-annotation*
    #:upla-write #:upla-write-rtn #:upla-write-double-rtn #:upla-write-comment #:upla-write-header
+   #:upla-write-code-annotation #:upla-write-code #:upla-write-tag #:upla-write-local-comment
    #:write-generated-code
 
    ;; parsing microlisp
@@ -289,12 +297,12 @@
 
    #:parse-to-address-term
    
-   #:*from-register* #:*to-register* #:*line-opcode* #:*enclosing-opcode*
+   #:*from-register* #:*to-register* #:*line-opcode* #:*enclosing-opcode* #:*constituent-assignment-fn*
    #:*function-being-compiled*
    #:*defumac-macros* #:*defupred-predicates*
 
    ;; defining microlisp operations, predicates, and macros
-   #:defufn #:defumac #:defupred
+   #:defufn #:defumac #:defupred #:fail-tag #:success-tag #:assign-constituent-highlevel #:assign-constituent-lowlevel
 
    ;; assembling
    #:*nanocontrol-symtab* #:*nanocontrol-array*

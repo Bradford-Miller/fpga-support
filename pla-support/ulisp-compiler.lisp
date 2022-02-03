@@ -1,8 +1,12 @@
 (in-package :microlisp-int)
 
-(fpga-support-version-reporter "FPGA PLA ulisp Compiler" 0 1 0
-                               "Time-stamp: <2022-01-11 17:00:24 gorbag>"
-                               "0.1 release")
+(fpga-support-version-reporter "FPGA PLA ulisp Compiler" 0 1 2
+                               "Time-stamp: <2022-01-27 17:44:31 gorbag>"
+                               "use intentional upla fns")
+
+;; 0.1.2   2/ 2/22 use intentional upla fns
+
+;; 0.1.1   1/27/22 cosmetics
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 0.1.0   1/11/22 snapping a line: 0.1 release of library supports scheme-79 test-0 and test-1. ;;
@@ -47,7 +51,7 @@ that gets assembled into the final form just as in the AIM"))
                          :prefix (setq fpga-pla-build-tools:*upla-file-name* (format nil "uPLA-~A-" (pathname-name pathname)))
                          :delete-when-close nil)))
 
-    (announcement-banner (format nil "ucode-compiler run ~a" (date-string)) fpga-pla-build-tools:*upla-stream*)
+    (announcement-banner (format nil "ulisp-compiler run ~a" (date-string)) fpga-pla-build-tools:*upla-stream*)
     (announce-project-version fpga-pla-build-tools:*upla-stream*) ; full versioning for now
 
     ;; prevalidate, set up tables, etc.
@@ -112,10 +116,8 @@ that gets assembled into the final form just as in the AIM"))
   "compiles the microlisp function into micro PLA"
   (let ((fpga-pla-build-tools:*function-being-compiled* function-tag))
     (fpga-pla-build-tools:upla-write-header "~a ~a:" tag-type function-tag)
-    (fpga-pla-build-tools:upla-write-rtn function-tag) ; put the tag in the file
+    (fpga-pla-build-tools:upla-write-tag function-tag) ; put the tag in the file
     (dolist (line function-definition)
-      (let ((compiled-line (compile-line line)))
+      (let ((compiled-line (compile-line line))) ; side effect fills in upla-stream
         (declare (ignore compiled-line))
-        ;; do this inside the compile-fn
-        #||(mapc #'upla-write-rtn compiled-line)||# ; break apart expanded forms to see easier
         ))))

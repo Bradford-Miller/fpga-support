@@ -1,6 +1,6 @@
 (in-package :fpga-pla-build-tools)
 
-(fpga-support-version-reporter "FPGA uPLA Assembler" 0 1 0
+(fpga-support-version-reporter "FPGA PLA ulisp Assembler" 0 1 0
                                "Time-stamp: <2022-01-11 17:01:30 gorbag>"
                                "0.1 release")
 
