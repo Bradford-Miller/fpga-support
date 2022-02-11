@@ -1,8 +1,16 @@
 (in-package :fpga-pla-build-tools)
 
-(fpga-support-version-reporter "FPGA PLA ulisp Comp. Defs" 0 1 3
-                               "Time-stamp: <2022-01-31 17:55:08 gorbag>"
-                               "add supress-logging key to defufn")
+(fpga-support-version-reporter "FPGA PLA ulisp Comp. Defs" 0 1 4
+                               "Time-stamp: <2022-02-09 11:57:51 gorbag>"
+                               "line disambiguation")
+
+;; 0.1.4   2/ 9/22 way too many things (fns, variables) with "line" in their name
+;;                    and it's ambiguous.  Splitting so "line" refers to,
+;;                    e.g. an output (log) line, "expression" refers to a
+;;                    'line' of code (single expression in nano or microcode
+;;                    land typically, and because we used (READ) it wasn't
+;;                    confined to a single input line anyway) and "wire" to
+;;                    refer to, e.g., a control or sense 'line' on a register.
 
 ;; 0.1.3   1/31/22 add explicit supress-logging key to defufn to prevent
 ;;                      overloading :constituent for this
@@ -74,7 +82,7 @@
 
 (defvar *from-register* nil)
 (defvar *to-register* nil)
-(defvar *line-opcode* nil)
+(defvar *expression-opcode* nil)
 (defvar *enclosing-opcode* nil)
 (defvar *function-being-compiled* nil)
 (defvar *constituent-assignment-fn* nil)
@@ -239,12 +247,12 @@ compiler later, but can also be a symbolic tag referring to a location."
      (defufn ,mac-name-symbol (,@lambda-list) ,@body)
      (pushnew ',mac-name-symbol *defumac-macros*)))
 
-(defmacro defupred (pred-symbol (sense-line indirect-p &optional register) &body body)
+(defmacro defupred (pred-symbol (sense-wire indirect-p &optional register) &body body)
   "defupred declares microcode predicates.
 For now, it just sets up a property list. indirect-p if false means
-the predicate tests the sense-line on the (from) register, and if :car
+the predicate tests the sense-wire on the (from) register, and if :car
 means it tests the car of what the (from) register points to via
-testing the sense-line on *bus*, and if :cdr the cdr, and if :arg the
+testing the sense-wire on *bus*, and if :cdr the cdr, and if :arg the
 register directly (generally this means to move the register onto the
 bus to enable the comparison). If register is supplied, it is an
 implicit FROM register for this predicate. If body is present, it
@@ -254,7 +262,7 @@ branch."
   `(cl:progn
      (export-ulisp-symbol ',pred-symbol)
      (setf (upred-p ',pred-symbol) t)
-     (setf (ucode-sense-line ',pred-symbol) ',sense-line)
+     (setf (ucode-sense-wire ',pred-symbol) ',sense-wire)
      (setf (ucode-pred-type ',pred-symbol) ,indirect-p)
      (pushnew ',pred-symbol *defupred-predicates*) ; for symmetry with defumac
      ,(when register

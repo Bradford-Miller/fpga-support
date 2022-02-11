@@ -1,8 +1,16 @@
 (in-package :microlisp-int)
 
-(fpga-support-version-reporter "FPGA PLA ulisp Compiler" 0 1 2
-                               "Time-stamp: <2022-01-27 17:44:31 gorbag>"
-                               "use intentional upla fns")
+(fpga-support-version-reporter "FPGA PLA ulisp Compiler" 0 1 3
+                               "Time-stamp: <2022-02-09 15:22:21 gorbag>"
+                               "line disambiguation")
+
+;; 0.1.3   2/ 9/22 way too many things (fns, variables) with "line" in their name
+;;                    and it's ambiguous.  Splitting so "line" refers to,
+;;                    e.g. an output (log) line, "expression" refers to a
+;;                    'line' of code (single expression in nano or microcode
+;;                    land typically, and because we used (READ) it wasn't
+;;                    confined to a single input line anyway) and "wire" to
+;;                    refer to, e.g., a control or sense 'line' on a register.
 
 ;; 0.1.2   2/ 2/22 use intentional upla fns
 
@@ -35,9 +43,9 @@ that gets assembled into the final form just as in the AIM"))
 ;; for this release, this is the interface to project specific
 ;; code. Eventually, I plan to rewrite more of that code to make it
 ;; generic so the interface will be pushed down a couple levels of
-;; abstraction than just the "line".
-(defgeneric compile-line (line)
-  (:documentation "project-specific compilation of a line (represented
+;; abstraction than just the "expression".
+(defgeneric compile-expression (expression)
+  (:documentation "project-specific compilation of an expression (represented
   as a list) into code suitable for the assembler"))
 
 (defmethod compile-microcode (filename)
@@ -91,7 +99,7 @@ that gets assembled into the final form just as in the AIM"))
                ;; we can GOTO them). We can add that later if we need
                ;; to.
                  
-               ;; Instead, each line of the symbolic microcode is
+               ;; Instead, each expression of the symbolic microcode is
                ;; transformed into a list of four elements by calling
                ;; the function associated with the microcode name
                ;; (created via the defufn macro). We can also get the
@@ -117,7 +125,7 @@ that gets assembled into the final form just as in the AIM"))
   (let ((fpga-pla-build-tools:*function-being-compiled* function-tag))
     (fpga-pla-build-tools:upla-write-header "~a ~a:" tag-type function-tag)
     (fpga-pla-build-tools:upla-write-tag function-tag) ; put the tag in the file
-    (dolist (line function-definition)
-      (let ((compiled-line (compile-line line))) ; side effect fills in upla-stream
-        (declare (ignore compiled-line))
+    (dolist (expression function-definition)
+      (let ((compiled-expression (compile-expression expression))) ; side effect fills in upla-stream
+        (declare (ignore compiled-expression))
         ))))

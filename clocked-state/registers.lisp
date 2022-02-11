@@ -1,16 +1,24 @@
 (in-package :fpga-registers)
 
-(fpga-support-version-reporter "FPGA Register Support" 0 1 2
-                               "Time-stamp: <2022-01-18 12:02:30 gorbag>"
-                               "remove special-register-p")
+(fpga-support-version-reporter "FPGA Register Support" 0 1 3
+                               "Time-stamp: <2022-02-09 11:55:53 gorbag>"
+                               "line disambiguation")
+
+;; 0.1.3   2/ 9/22 way too many things (fns, variables) with "line" in their name
+;;                    and it's ambiguous.  Splitting so "line" refers to,
+;;                    e.g. an output (log) line, "expression" refers to a
+;;                    'line' of code (single expression in nano or microcode
+;;                    land typically, and because we used (READ) it wasn't
+;;                    confined to a single input line anyway) and "wire" to
+;;                    refer to, e.g., a control or sense 'line' on a register.
 
 ;; 0.1.2   1/18/22 cleanup obsolete code: removing special treatment of registers
-;;                    which required multiple control lines for TO as new covering
+;;                    which required multiple control wires for TO as new covering
 ;;                    set computation deals with it.
 
 ;; support for registers
 
-;; 0.1.1   1/13/22 set-control-line-fn - moves this out of project
+;; 0.1.1   1/13/22 set-control-wire-fn - moves this out of project
 ;;                     specific code and adds ability to substitute
 ;;                     covering set of controls in place of missing
 ;;                     one
@@ -162,23 +170,23 @@ since they act similarly, just not in the programmers model)")
            (not (null (register-alias symbol))))))
 
 ;; used on registers
-(define-property-accessor valid-control-lines :valid-control-lines)
-(define-property-accessor valid-sense-lines :valid-sense-lines)
+(define-property-accessor valid-control-wires :valid-control-wires)
+(define-property-accessor valid-sense-wires :valid-sense-wires)
 
 ;; control and sense wires are used on registers
 (define-property-accessor sense-wire-name :sense-wire-name)
 (define-property-accessor sense-wire-register :sense-wire-register) ; register associated with this sense wire
 (define-property-accessor sense-wire-encoding :sense-wire-encoding)
 
-;; for simulation, at least, here is code for setting and clearing the control lines
+;; for simulation, at least, here is code for setting and clearing the control wires
 ;; we have separate from and to control
 
-(defun set-control-line-fn (control-line-name register-name)
-  (let ((control-lines (microlisp-int:control-lines-for-register-op register-name control-line-name))
+(defun set-control-wire-fn (control-wire-name register-name)
+  (let ((control-wires (microlisp-int:control-wires-for-register-op register-name control-wire-name))
         (nv (gensym)))
     `(lambda (,nv)
        ,@(mapcar #'(lambda (cl)
                      `(setf (,(register-flag-accessor cl) ',register-name) ,nv))
-                 control-lines))))
+                 control-wires))))
 
       

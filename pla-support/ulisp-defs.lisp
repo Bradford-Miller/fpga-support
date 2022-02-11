@@ -1,10 +1,18 @@
 (in-package :microlisp-int)
 
-(fpga-support-version-reporter "FPGA PLA ulisp Defs" 0 1 1
-                               "Time-stamp: <2022-01-14 10:24:21 gorbag>"
-                               "*control-line-covering-sets-alist*")
+(fpga-support-version-reporter "FPGA PLA ulisp Defs" 0 1 2
+                               "Time-stamp: <2022-02-09 12:01:36 gorbag>"
+                               "line disambiguation")
 
-;; 0.1.1   1/13/22 add *control-line-covering-sets-alist* and reset fn
+;; 0.1.2   2/ 9/22 way too many things (fns, variables) with "line" in their name
+;;                    and it's ambiguous.  Splitting so "line" refers to,
+;;                    e.g. an output (log) line, "expression" refers to a
+;;                    'line' of code (single expression in nano or microcode
+;;                    land typically, and because we used (READ) it wasn't
+;;                    confined to a single input line anyway) and "wire" to
+;;                    refer to, e.g., a control or sense 'line' on a register.
+
+;; 0.1.1   1/13/22 add *control-wire-covering-sets-alist* and reset fn
 ;;                 break out declare-register-control-wires and declare-register-sense-wires
 ;;                   from defreg (so defureg can use them)
 
@@ -244,10 +252,10 @@ association between bit representations and the symbols in the microcode.")
      (declare-register-sense-wires ',name ',sense-wires)))
 
 ;; covering sets (see ulisp-support)
-(defvar *control-line-covering-sets-alist* nil)
+(defvar *control-wire-covering-sets-alist* nil)
 
 (defun reset-covering-set-alist ()
-  (setq *control-line-covering-sets-alist* nil))
+  (setq *control-wire-covering-sets-alist* nil))
 
 ;; type dispatch (validation)
 

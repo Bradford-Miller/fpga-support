@@ -1,12 +1,20 @@
 (in-package :microlisp-int)
 
-(fpga-support-version-reporter "FPGA PLA ulisp Support" 0 1 2
-                               "Time-stamp: <2022-01-31 17:55:31 gorbag>"
-                               "suppress-logging property")
+(fpga-support-version-reporter "FPGA PLA ulisp Support" 0 1 3
+                               "Time-stamp: <2022-02-09 12:03:53 gorbag>"
+                               "line disambiguation")
+
+;; 0.1.3   2/ 9/22 way too many things (fns, variables) with "line" in their name
+;;                    and it's ambiguous.  Splitting so "line" refers to,
+;;                    e.g. an output (log) line, "expression" refers to a
+;;                    'line' of code (single expression in nano or microcode
+;;                    land typically, and because we used (READ) it wasn't
+;;                    confined to a single input line anyway) and "wire" to
+;;                    refer to, e.g., a control or sense 'line' on a register.
 
 ;; 0.1.2   1/31/22 add suppress-logging property on uops
 
-;; 0.1.1   1/13/22 add abiility to define covering sets of control lines (see comments)
+;; 0.1.1   1/13/22 add abiility to define covering sets of control wires (see comments)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 0.1.0   1/11/22 snapping a line: 0.1 release of library supports scheme-79 test-0 and test-1. ;;
@@ -40,7 +48,7 @@
 
 (define-property-accessor upred-p :ulisp-ucode-pred)
 
-(define-property-accessor ucode-sense-line :ulisp-ucode-sense-line)
+(define-property-accessor ucode-sense-wire :ulisp-ucode-sense-wire)
 
 (define-property-accessor ucode-pred-type :ulisp-ucode-pred-type)
 
@@ -48,16 +56,16 @@
 
 (define-property-accessor ucode-pred-defn :ulisp-ucode-pred-defn)
 
-;; add note that sense-line may be negated. 
+;; add note that sense-wire may be negated. 
 (defun upred-desc (pred-symbol)
-  "returns three values: the associated sense line for the predicate
+  "returns three values: the associated sense wire for the predicate
 and if it is indirect (tests what FROM points to, not the register
 itself), implicit register(s) (if any), the CAR of which to be used
 for FROM if a list, and finally the symbol used to define the
-expansion function if specialized. Note that the sense line may also
-be (NOT <sense-line>) indicating the negated sense-line should be
+expansion function if specialized. Note that the sense wire may also
+be (NOT <sense-wire>) indicating the negated sense-wire should be
 used."
-  (values (ucode-sense-line pred-symbol)
+  (values (ucode-sense-wire pred-symbol)
           (ucode-pred-type pred-symbol)
           (ucode-pred-from-register pred-symbol)
           (ucode-pred-defn pred-symbol)))
@@ -141,50 +149,50 @@ used."
 ;; covering field to the union of the partitioning fields (i.e. if we
 ;; want to move something TO the VAL register, we can use the set of
 ;; TO-TYPE and TO-ADDRESS as that's the partition for TO (VAL does not
-;; declare a TO control line, but it does declare the latter). In the
+;; declare a TO control wire, but it does declare the latter). In the
 ;; AIM, the authors allude to having nanocode for this, but rather
 ;; than writing a special parser for the TO field (which is where this
 ;; comes up in scheme-79) I think having this kind of declaration will
 ;; be more general.
 
 
-(defun declare-covering-set (imaginary-control-line &rest covering-control-lines)
-  "Note that the imaginary-control-line may not be imaginary for some
-registers, but if a register does NOT have the imaginary control line,
-we can check if it does, instead, have the covering control lines and
-use those as an alias as it were (multiple active TO lines are
+(defun declare-covering-set (imaginary-control-wire &rest covering-control-wires)
+  "Note that the imaginary-control-wire may not be imaginary for some
+registers, but if a register does NOT have the imaginary control wire,
+we can check if it does, instead, have the covering control wires and
+use those as an alias as it were (multiple active TO wires are
 allowed, for instance). We can check these recursively, if needed."
-  ;; Since there can be more than one cover for a control line, we
-  ;; need to always cons on new lines
-  (format *error-output* "~&; Setting up covering set for ~s~%" imaginary-control-line)
-  (setq *control-line-covering-sets-alist*
-        (acons imaginary-control-line
-               covering-control-lines
-               *control-line-covering-sets-alist*)))
+  ;; Since there can be more than one cover for a control wire, we
+  ;; need to always cons on new wires
+  (format *error-output* "~&; Setting up covering set for ~s~%" imaginary-control-wire)
+  (setq *control-wire-covering-sets-alist*
+        (acons imaginary-control-wire
+               covering-control-wires
+               *control-wire-covering-sets-alist*)))
 
-(defun find-covering-set (desired-control-line available-control-lines)
-  "Tries to find a set of control lines from the list that implement the desired-control-line"
-  (if (find desired-control-line available-control-lines) 
+(defun find-covering-set (desired-control-wire available-control-wires)
+  "Tries to find a set of control wires from the list that implement the desired-control-wire"
+  (if (find desired-control-wire available-control-wires) 
     ;; well that was easy
-    (list desired-control-line)
+    (list desired-control-wire)
     (some #'(lambda (entry)     ;; we check each as there may be more than one cover
-              (when (eql (car entry) desired-control-line)
-                (let ((diff (set-difference (cdr entry) available-control-lines)))
+              (when (eql (car entry) desired-control-wire)
+                (let ((diff (set-difference (cdr entry) available-control-wires)))
                   (cond ((null diff) ;match
                          (cdr entry))
                         (t
                          (append
-                          (intersection available-control-lines (cdr entry)) ; control lines we do have
+                          (intersection available-control-wires (cdr entry)) ; control wires we do have
                           (mapcan #'(lambda (mismatch)
-                                      (let ((hits (find-covering-set mismatch available-control-lines)))
+                                      (let ((hits (find-covering-set mismatch available-control-wires)))
                                         (when (null hits)
                                         ; every one better generate a result
                                           (return-from find-covering-set nil))
                                         (copy-list hits))) ; mapcan is destructive
                                   diff)))))))
-          *control-line-covering-sets-alist*)))
+          *control-wire-covering-sets-alist*)))
 
-(defun control-lines-for-register-op (register-name desired-control)
+(defun control-wires-for-register-op (register-name desired-control)
   "Interface for find-covering-set for a specific register"
   (find-covering-set desired-control (cdr (assoc register-name *register-control-wires*))))
 

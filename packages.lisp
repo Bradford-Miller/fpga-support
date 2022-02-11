@@ -1,10 +1,18 @@
 (in-package :cl-user)
 (defvar *fpga-support-version-reporter-initializations* nil)
 
-(cl-lib:detailed-version-reporter "FPGA Dev Support packages" 0 1 5
-                                  "Time-stamp: <2022-02-02 17:01:35 gorbag>"
-                                  "upla-write-code upla-write-code-annotation"
+(cl-lib:detailed-version-reporter "FPGA Dev Support packages" 0 1 6
+                                  "Time-stamp: <2022-02-09 11:52:20 gorbag>"
+                                  "line disambiguation"
                                   :initialization-list-symbol *fpga-support-version-reporter-initializations*)
+
+;; 0.1.6   2/ 9/22 way too many things (fns, variables) with "line" in their name
+;;                    and it's ambiguous.  Splitting so "line" refers to,
+;;                    e.g. an output (log) line, "expression" refers to a
+;;                    'line' of code (single expression in nano or microcode
+;;                    land typically, and because we used (READ) it wasn't
+;;                    confined to a single input line anyway) and "wire" to
+;;                    refer to, e.g., a control or sense 'line' on a register.
 
 ;; 0.1.5   2/ 2/22 upla-write-code upla-write-code-annotation upla-write-tag
 
@@ -14,10 +22,10 @@
 ;;                    can be used in the body
 
 ;; 0.1.2   1/18/22 cleanup obsolete code: removing special treatment of registers
-;;                    which required multiple control lines for TO as new covering
+;;                    which required multiple control wires for TO as new covering
 ;;                    set computation deals with it.
 
-;; 0.1.1   1/13/22 add ability to declare covering sets for control lines and look them up.
+;; 0.1.1   1/13/22 add ability to declare covering sets for control wires and look them up.
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 0.1.0   1/11/22 snapping a line: 0.1 release of library supports scheme-79 test-0 and test-1. ;;
@@ -30,7 +38,7 @@
 
 ;; 0.0.18  1/ 7/22 pad-defn, etc.
 ;;                 *debug-compiler*
-;;                 compile-microcode compile-function compile-line
+;;                 compile-microcode compile-function compile-expression
 ;;                 run-assembler, run-assembler-pass*
 
 ;; 0.0.17  1/ 6/22 analyze-code now a generic function for the validator
@@ -242,7 +250,7 @@
    #:generate-cond-test
 
    ;; toplevel compiler fns
-   #:compile-microcode #:compile-function #:compile-line
+   #:compile-microcode #:compile-function #:compile-expression
            
    ;;; database vars
    #:*registers-whose-types-are-tags*
@@ -250,12 +258,12 @@
    #:*ulisp-operations-alist* #:*ulisp-macro-alist* 
    #:*special-ucode-operations-alist*
    #:*internal-ucode-operations-alist*
-   #:*control-line-covering-sets-alist*
+   #:*control-wire-covering-sets-alist*
 
    ;;; database functions
    #:mark-register-use  #:create-ulopd #:create-ulmd
    #:reset-covering-set-alist #:declare-covering-set #:find-covering-set
-   #:control-lines-for-register-op
+   #:control-wires-for-register-op
    #:declare-register-control-wires #:declare-register-sense-wires
    
    ;; predicate support
@@ -267,7 +275,7 @@
 
    #:opcode-fn
    #:upred-p #:upred-desc #:ufun-p #:umac-p
-   #:ucode-sense-line #:ucode-pred-type #:ucode-pred-from-register #:ucode-pred-defn
+   #:ucode-sense-wire #:ucode-pred-type #:ucode-pred-from-register #:ucode-pred-defn
    #:ucode-precedence #:ucode-constituent #:ucode-suppress-logging
    #:microcodes-used  
 
@@ -297,7 +305,7 @@
 
    #:parse-to-address-term
    
-   #:*from-register* #:*to-register* #:*line-opcode* #:*enclosing-opcode* #:*constituent-assignment-fn*
+   #:*from-register* #:*to-register* #:*expression-opcode* #:*enclosing-opcode* #:*constituent-assignment-fn*
    #:*function-being-compiled*
    #:*defumac-macros* #:*defupred-predicates*
 
@@ -333,10 +341,10 @@
    #:latch-name
 
    ;; register definitions
-   #:defchip-reg #:defchip-special-reg #:register-p #:valid-control-lines #:valid-sense-lines
+   #:defchip-reg #:defchip-special-reg #:register-p #:valid-control-wires #:valid-sense-wires
    #:sense-wire-name #:sense-wire-register #:sense-wire-encoding
 
-   #:set-control-line-fn
+   #:set-control-wire-fn
    ))
 
 (defpackage :fpga-pads
