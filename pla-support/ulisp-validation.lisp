@@ -1,8 +1,10 @@
 (in-package :microlisp-int)
 
-(fpga-support-version-reporter "FPGA PLA ulisp Validator" 0 1 6
-                               "Time-stamp: <2022-02-03 12:27:00 gorbag>"
-                               "fix so defpc increments non-pointer-type counts")
+(fpga-support-version-reporter "FPGA PLA ulisp Validator" 0 1 7
+                               "Time-stamp: <2022-02-14 11:18:47 gorbag>"
+                               "bump up opcode total usage column size")
+
+;; 0.1.7   2/14/22 bump up opcode total usage column size
 
 ;; 0.1.6   2/ 3/22 fix 0.1.5: defpc should have incremented last-non-pointer-type not last-pointer-type
 
@@ -314,7 +316,7 @@ microcode will work to interpret s-code."
                                             all-uses)
                                       normal-count
                                       internal-count
-                                      '("99") ; fake total
+                                      '("999") ; fake total
                                       '("    (unimplemented)")))))
                (princ ";;   " stream)
                (print-tab-line stream tab-sizes header-string "X" "I" "T" "")
