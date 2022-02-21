@@ -1,8 +1,11 @@
 (in-package :fpga-registers)
 
-(fpga-support-version-reporter "FPGA Register Support" 0 1 3
-                               "Time-stamp: <2022-02-09 11:55:53 gorbag>"
-                               "line disambiguation")
+(fpga-support-version-reporter "FPGA Register Support" 0 1 4
+                               "Time-stamp: <2022-02-18 17:10:03 gorbag>"
+                               "add assert to set-control-wire-fn")
+
+;; 0.1.4   2/18/22 add assert to set-control-wire-fn to detect if there isn't 
+;;                    such a control wire
 
 ;; 0.1.3   2/ 9/22 way too many things (fns, variables) with "line" in their name
 ;;                    and it's ambiguous.  Splitting so "line" refers to,
@@ -184,6 +187,7 @@ since they act similarly, just not in the programmers model)")
 (defun set-control-wire-fn (control-wire-name register-name)
   (let ((control-wires (microlisp-int:control-wires-for-register-op register-name control-wire-name))
         (nv (gensym)))
+    (assert control-wires (control-wire-name) "Control wire ~a for register ~a does not exist!" control-wire-name register-name)
     `(lambda (,nv)
        ,@(mapcar #'(lambda (cl)
                      `(setf (,(register-flag-accessor cl) ',register-name) ,nv))
