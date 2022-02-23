@@ -1,6 +1,8 @@
-Time-stamp: <2022-01-18 13:03:40 gorbag>
+Time-stamp: <2022-02-21 13:25:59 gorbag>
 
 Migrating TODO items that should be done generally rather than specifically for the Scheme-79 project here... 10/21/2021
+
+Note that there may be more detailed notes (or minor issues not captured here) in individual source files marked with (TBD).
 
 Next:   
         
