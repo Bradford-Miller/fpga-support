@@ -1,10 +1,13 @@
 (in-package :cl-user)
 (defvar *fpga-support-version-reporter-initializations* nil)
 
-(cl-lib:detailed-version-reporter "FPGA Dev Support packages" 0 1 6
-                                  "Time-stamp: <2022-02-09 11:52:20 gorbag>"
-                                  "line disambiguation"
+(cl-lib:detailed-version-reporter "FPGA Dev Support packages" 0 1 7
+                                  "Time-stamp: <2022-02-24 11:33:08 gorbag>"
+                                  "*words-size* and *register-size* to project-defs"
                                   :initialization-list-symbol *fpga-support-version-reporter-initializations*)
+
+;; 0.1.7   2/24/22 move *word-size* and *register-size* to project defs (so it's
+;;                    clear the project can pick something else)
 
 ;; 0.1.6   2/ 9/22 way too many things (fns, variables) with "line" in their name
 ;;                    and it's ambiguous.  Splitting so "line" refers to,
@@ -142,6 +145,10 @@
 
    #:*debug-pad-timing* #:*debug-validator* #:*debug-precompiler* #:*debug-compiler*
    #:*debug-assembler*
+
+   ;; important configuration parameters
+   #:*word-size* #:*register-size*
+
 
    ;; generic functions the project should define methods for
    #:generate-cond-test #:analyze-code
@@ -333,7 +340,7 @@
 (defpackage :fpga-registers
   (:use :debug-support :microlisp-int :fpga-project-defs :fpga-support :common :cl-lib common-lisp)
   (:export
-   #:make-register #:*register-size* #:*all-register-names*
+   #:make-register #:*all-register-names*
    #:register-flags #:register-flag-accessor #:register-alias #:register-refs #:register-alist
 
    #:strip-register-name #:make-register-field-symbol

@@ -1,8 +1,10 @@
 (in-package :fpga-registers)
 
-(fpga-support-version-reporter "FPGA Register Support" 0 1 4
-                               "Time-stamp: <2022-02-18 17:10:03 gorbag>"
-                               "add assert to set-control-wire-fn")
+(fpga-support-version-reporter "FPGA Register Support" 0 1 5
+                               "Time-stamp: <2022-02-25 17:50:08 gorbag>"
+                               "explicit word-size")
+
+;; 0.1.5   2/24/22 make word-size explicit (was register-size)
 
 ;; 0.1.4   2/18/22 add assert to set-control-wire-fn to detect if there isn't 
 ;;                    such a control wire
@@ -42,7 +44,9 @@
 ;; 0.0.0   12/ 3/21 New: moved from various simulation files,
 ;;                     e.g. machine-defs
 
-(defparameter *register-size* 32
+(defparameter *word-size* 32)
+
+(defparameter *register-size* *word-size*
   "effectively our word size, unless one wants to consider a CONS cell
 a word instead of two words... this establishes how many bits we
 should allocate as a bit vector to represent a given
