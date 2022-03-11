@@ -72,8 +72,6 @@ however, then we continue to test the pad until it does return true
 and then invoke the callback function (which can ignore the second
 parameter as it will always be non-nil). This is useful, e.g., for
 monitoring the *interrupt-request* pad."
-      (declare (ignorable test-immediate-p)) ; if validity is :any or :all we'll treat it as if this is set anyway.
-      
       (cl:cond
         ((and callback-fn retest-until-p)
          ;; if we're in the right phase AND the test holds, call
