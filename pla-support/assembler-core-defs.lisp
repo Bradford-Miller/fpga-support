@@ -1,8 +1,12 @@
 (in-package :fpga-pla-build-tools)
 
-(fpga-support-version-reporter "FPGA PLA ulisp Assem. Defs" 0 1 1
-                               "Time-stamp: <2022-01-27 14:36:33 gorbag>"
+(fpga-support-version-reporter "FPGA PLA ulisp Assem. Defs" 0 2 0
+                               "Time-stamp: <2022-03-18 15:11:06 gorbag>"
                                "allow microcontrol-symbol-value to check for errors")
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 0.2.0   3/18/22 snapping a line: 0.2 release of library supports scheme-79 test-0 thru test-3 ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; 0.1.1   1/27/22 add error-p argument to microcontrol-symbol-value to
 ;;                    allow it call error if the argument doesn't have

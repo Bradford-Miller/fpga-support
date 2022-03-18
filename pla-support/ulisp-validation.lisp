@@ -1,8 +1,12 @@
 (in-package :microlisp-int)
 
-(fpga-support-version-reporter "FPGA PLA ulisp Validator" 0 1 7
-                               "Time-stamp: <2022-02-14 11:18:47 gorbag>"
+(fpga-support-version-reporter "FPGA PLA ulisp Validator" 0 2 0
+                               "Time-stamp: <2022-03-18 15:12:39 gorbag>"
                                "bump up opcode total usage column size")
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 0.2.0   3/18/22 snapping a line: 0.2 release of library supports scheme-79 test-0 thru test-3 ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; 0.1.7   2/14/22 bump up opcode total usage column size
 

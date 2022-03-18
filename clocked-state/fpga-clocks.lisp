@@ -1,8 +1,12 @@
 (in-package :fpga-clocked)
 
-(fpga-support-version-reporter "FPGA Clock Support" 0 1 2
-                               "Time-stamp: <2022-01-19 14:21:59 gorbag>"
+(fpga-support-version-reporter "FPGA Clock Support" 0 2 0
+                               "Time-stamp: <2022-03-18 15:09:16 gorbag>"
                                "add validation for clock phase usage")
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 0.2.0   3/18/22 snapping a line: 0.2 release of library supports scheme-79 test-0 thru test-3 ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; 0.1.2   1/19/22 add validation code for clock phase usage
 

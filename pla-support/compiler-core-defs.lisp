@@ -1,8 +1,12 @@
 (in-package :fpga-pla-build-tools)
 
-(fpga-support-version-reporter "FPGA PLA ulisp Comp. Defs" 0 1 4
-                               "Time-stamp: <2022-02-09 11:57:51 gorbag>"
+(fpga-support-version-reporter "FPGA PLA ulisp Comp. Defs" 0 2 0
+                               "Time-stamp: <2022-03-18 15:11:34 gorbag>"
                                "line disambiguation")
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 0.2.0   3/18/22 snapping a line: 0.2 release of library supports scheme-79 test-0 thru test-3 ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; 0.1.4   2/ 9/22 way too many things (fns, variables) with "line" in their name
 ;;                    and it's ambiguous.  Splitting so "line" refers to,

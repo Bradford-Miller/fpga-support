@@ -1,6 +1,6 @@
 # Common Lisp support for defining FPGA structures, simulation support code and firmware compilation
 
-Time-stamp: <2022-02-16 12:38:08 gorbag>
+Time-stamp: <2022-03-18 15:06:10 gorbag>
 
 After some initial work on simulating the Scheme-79 chip (see the
 project files), code that could be reused for other such FPGA projects
@@ -48,6 +48,12 @@ be suitable for such use in the future!)
 
 Note the TODO.txt file documents specific tasks that are planned (in
 some sense ;-) or previous TODO items that have been completed.
+
+#### 3-18-22 BWM
+
+test-3 now runs in the s79-simulator directory, so I'm incrementing the
+minor release version to 0.2. The next milestone will be to produce FPGA
+code so expect a lot of changes to this library!
 
 #### 1-11-22 BWM
 

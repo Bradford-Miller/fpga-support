@@ -1,8 +1,12 @@
 (in-package :fpga-pla-build-tools)
 
-(fpga-support-version-reporter "FPGA PLA Build Tool Defs" 0 1 1
-                               "Time-stamp: <2022-02-02 17:01:04 gorbag>"
+(fpga-support-version-reporter "FPGA PLA Build Tool Defs" 0 2 0
+                               "Time-stamp: <2022-03-18 15:11:16 gorbag>"
                                "intention-related upla-write fns")
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 0.2.0   3/18/22 snapping a line: 0.2 release of library supports scheme-79 test-0 thru test-3 ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; 0.1.1   2/ 2/22 add intention-related upla-write fns
 

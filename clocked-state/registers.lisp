@@ -1,8 +1,12 @@
 (in-package :fpga-registers)
 
-(fpga-support-version-reporter "FPGA Register Support" 0 1 5
-                               "Time-stamp: <2022-02-25 17:50:08 gorbag>"
+(fpga-support-version-reporter "FPGA Register Support" 0 2 0
+                               "Time-stamp: <2022-03-18 15:10:02 gorbag>"
                                "explicit word-size")
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 0.2.0   3/18/22 snapping a line: 0.2 release of library supports scheme-79 test-0 thru test-3 ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; 0.1.5   2/24/22 make word-size explicit (was register-size)
 

@@ -1,8 +1,12 @@
 (in-package :fpga-project-defs)
 
-(fpga-support-version-reporter "FPGA Dev Support Proj Defs" 0 1 2
-                               "Time-stamp: <2022-02-10 20:30:18 gorbag>"
+(fpga-support-version-reporter "FPGA Dev Support Proj Defs" 0 2 0
+                               "Time-stamp: <2022-03-18 15:08:29 gorbag>"
                                "line disambiguation")
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 0.2.0   3/18/22 snapping a line: 0.2 release of library supports scheme-79 test-0 thru test-3 ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; 0.1.2   2/ 9/22 way too many things (fns, variables) with "line" in their name
 ;;                    and it's ambiguous.  Splitting so "line" refers to,

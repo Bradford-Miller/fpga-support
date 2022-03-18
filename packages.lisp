@@ -1,10 +1,14 @@
 (in-package :cl-user)
 (defvar *fpga-support-version-reporter-initializations* nil)
 
-(cl-lib:detailed-version-reporter "FPGA Dev Support packages" 0 1 7
-                                  "Time-stamp: <2022-02-24 11:33:08 gorbag>"
+(cl-lib:detailed-version-reporter "FPGA Dev Support packages" 0 2 0
+                                  "Time-stamp: <2022-03-18 15:08:18 gorbag>"
                                   "*words-size* and *register-size* to project-defs"
                                   :initialization-list-symbol *fpga-support-version-reporter-initializations*)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 0.2.0   3/18/22 snapping a line: 0.2 release of library supports scheme-79 test-0 thru test-3 ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; 0.1.7   2/24/22 move *word-size* and *register-size* to project defs (so it's
 ;;                    clear the project can pick something else)
