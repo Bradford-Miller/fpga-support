@@ -1,8 +1,12 @@
 (in-package :fpga-diagnostics)
 
-(fpga-support-version-reporter "FPGA Dev Diag Support" 0 1 0
-                               "Time-stamp: <2022-01-11 13:50:20 gorbag>"
-                               "0.1 release")
+(fpga-support-version-reporter "FPGA Dev Diag Support" 0 2 0
+                               "Time-stamp: <2022-03-18 15:13:13 gorbag>"
+                               "0.2 release")
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 0.2.0   3/18/22 snapping a line: 0.2 release of library supports scheme-79 test-0 thru test-3 ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 0.1.0   1/11/22 snapping a line: 0.1 release of library supports scheme-79 test-0 and test-1. ;;

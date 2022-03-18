@@ -1,8 +1,12 @@
 (in-package :microlisp-int)
 
-(fpga-support-version-reporter "FPGA PLA ulisp macros" 0 1 0
-                               "Time-stamp: <2022-01-11 17:00:46 gorbag>"
-                               "0.1 release")
+(fpga-support-version-reporter "FPGA PLA ulisp macros" 0 2 0
+                               "Time-stamp: <2022-03-18 15:12:16 gorbag>"
+                               "0.2 release")
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 0.2.0   3/18/22 snapping a line: 0.2 release of library supports scheme-79 test-0 thru test-3 ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 0.1.0   1/11/22 snapping a line: 0.1 release of library supports scheme-79 test-0 and test-1. ;;

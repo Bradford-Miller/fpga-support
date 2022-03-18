@@ -1,9 +1,13 @@
 (in-package :fpga-support)
 
-(cl-lib:detailed-version-reporter "FPGA Dev Support Defs" 0 1 0
-                                  "Time-stamp: <2022-01-11 13:46:10 gorbag>"
-                                  "0.1 release"
+(cl-lib:detailed-version-reporter "FPGA Dev Support Defs" 0 2 0
+                                  "Time-stamp: <2022-03-18 15:26:01 gorbag>"
+                                  "0.2 release"
                                   :initialization-list-symbol cl-user::*fpga-support-version-reporter-initializations*)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 0.2.0   3/18/22 snapping a line: 0.2 release of library supports scheme-79 test-0 thru test-3 ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 0.1.0   1/11/22 snapping a line: 0.1 release of library supports scheme-79 test-0 and test-1. ;;
@@ -20,7 +24,10 @@
                                      :initialization-list-symbol
                                      cl-user::*fpga-support-version-reporter-initializations*))
 
-(defparameter *fpga-support-version-number* "0.1")
+(defparameter *fpga-support-version-number* "0.2")
+
+;; 0.2: support scheme-79 tests 0 thru 3. Mainly additional repatriation of code and
+;;         some minor enhancements for debugging.
 
 ;; 0.1: support scheme-79 test-0 and test-1: much more segregation and
 ;;         repatriation including high level compiler and assembler,

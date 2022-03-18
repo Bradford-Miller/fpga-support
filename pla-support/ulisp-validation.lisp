@@ -1,14 +1,39 @@
 (in-package :microlisp-int)
 
-(fpga-support-version-reporter "FPGA PLA ulisp Validator" 0 1 3
-                               "Time-stamp: <2022-01-18 12:35:26 gorbag>"
-                               "cleanup special-register-p")
+(fpga-support-version-reporter "FPGA PLA ulisp Validator" 0 2 0
+                               "Time-stamp: <2022-03-18 15:12:39 gorbag>"
+                               "bump up opcode total usage column size")
 
-;; 0.1.2   1/18/22 cleanup obsolete code: removing special treatment of registers
-;;                    which required multiple control lines for TO as new covering
-;;                    set computation deals with it.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 0.2.0   3/18/22 snapping a line: 0.2 release of library supports scheme-79 test-0 thru test-3 ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; 0.1.1   1/14/22 call reset-covering-set-alist when initializing validator (retracted)
+;; 0.1.7   2/14/22 bump up opcode total usage column size
+
+;; 0.1.6   2/ 3/22 fix 0.1.5: defpc should have incremented last-non-pointer-type not last-pointer-type
+
+;; 0.1.5   1/27/22 export tag names as well as types
+;;                 defpc now generates non-pointer-type not just a tag
+;;                    (for micro-call support!)
+
+;; 0.1.4   1/26/22 remove obsolete reference to special register access
+;;                    in statistics on register usage
+
+;; 0.1.3   1/24/22 change warning about defreturn generating a type
+;;                    since that's to be expected.
+;;                 Also define new terms that didn't come from a
+;;                    defreturn as a pointer-type as before but
+;;                    maintain warning
+;;                 Export type names from microlisp (for ease of
+;;                    debugging)
+
+;; 0.1.2   1/18/22 cleanup obsolete code: removing special treatment of
+;;                    registers which required multiple control lines
+;;                    for TO as new covering set computation deals
+;;                    with it.
+
+;; 0.1.1   1/14/22 call reset-covering-set-alist when initializing
+;;                    validator (retracted)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 0.1.0   1/11/22 snapping a line: 0.1 release of library supports scheme-79 test-0 and test-1. ;;
@@ -42,7 +67,7 @@
 ;; NB: we side effect some symbols defined in the microcode such that
 ;; we can easily look up their definitions for simulation or the
 ;; console/debug capabilies. When we start to emit HDL (TBD) that
-;; information would be lost (in the HDL) unless it is copied into a
+;; information will be lost (in the HDL) unless it is copied into a
 ;; PLA itself (we don't expect the FPGA to online validate its own
 ;; microcode, however, so this is more a note to myself about being
 ;; hygenic when building out the HDL production code).
@@ -295,7 +320,7 @@ microcode will work to interpret s-code."
                                             all-uses)
                                       normal-count
                                       internal-count
-                                      '("99") ; fake total
+                                      '("999") ; fake total
                                       '("    (unimplemented)")))))
                (princ ";;   " stream)
                (print-tab-line stream tab-sizes header-string "X" "I" "T" "")
@@ -330,16 +355,15 @@ microcode will work to interpret s-code."
 
     (flet ((register-title (register)                           
              (format nil "~a" register)))
-      (let* ((header-string "register usage (Special registers don't have TO):")
+      (let* ((header-string "register usage:")
              (tab-sizes (setup-tabulated-output
-                         5
+                         4
                          (list (cons header-string (mapcar #'register-title fpga-registers:*all-register-names*))
                                '("TOxx")
                                '("FROM")
-                               '("TOTAL")
-                               '("SPECIAL")))))
+                               '("TOTAL")))))
         (princ ";;   " stream)
-        (print-tab-line stream tab-sizes header-string "TO" "FROM" "TOTAL" "SPECIAL")
+        (print-tab-line stream tab-sizes header-string "TO" "FROM" "TOTAL")
         (terpri stream)
 
         (dolist (register fpga-registers:*all-register-names*)
@@ -352,8 +376,7 @@ microcode will work to interpret s-code."
                             (register-title register)
                             to-refs
                             from-refs
-                            total-refs
-                            (- total-refs from-refs to-refs )))
+                            total-refs))
           (terpri stream))))
     (format-justified-string ";; TO registers used"
                              (format nil "~s"
@@ -407,7 +430,12 @@ been defined"
                                                          **non-pointer-types**))))
       (setq last-pointer-type-number (apply #'max
                                             (mapcar #'cadr
-                                                    **pointer-types**)))))
+                                                    **pointer-types**)))
+      ;; export the tag and type names from microlisp
+      (export tags-defined *ulang-pkg*)
+      (export tags-used *ulang-pkg*)
+      (export pointer-types *ulang-pkg*)
+      (export non-pointer-types *ulang-pkg*)))
 
   (defun tag-defined-p (tag)
     (not (null (member tag tags-defined))))
@@ -432,33 +460,60 @@ been defined"
   (defun non-pointer-type-p (typename)
     (member typename non-pointer-types))
 
-  (defun note-type-defined (typename)
+  (defun note-type-defined (typename context)
     (cl:cond
-      ((member typename types-defined)
+     ((member typename types-defined)
        (warn "Redefining type ~A" typename)
        ;; undefine it then define it
        (setq types-defined (remove typename types-defined))
        (setf (microcode-symbol typename) nil)
-       (note-type-defined typename))
+       (note-type-defined typename context))
       ((and (not (pointer-type-p typename))
             (not (non-pointer-type-p typename)))
-       ;; presumably a micro return address, so make it a pointer type
+       ;; if a micro return address, store as a pointer type
        ;; as "The (micro) return address is stored as the type of the
        ;; stack pointer. Thus all micro return addresses must be
        ;; pointer types - something the compiler must know about!"
+       (cl:if (eql context 'defpc) ; simple pcs are non-pointers
+              (incf last-non-pointer-type-number)
+              (incf last-pointer-type-number))
+
        (when *debug-precompiler*
-         (warn "defining new type ~A as a pointer type (micro-return-address) #o~o!"
-               typename (incf last-pointer-type-number)))
+         ;; if it came from defreturn, we don't need to warn, but note it.
+         (case context
+           (defreturn
+             (note "Defreturn ~A defined as a pointer type #o~o!"
+                   typename last-pointer-type-number))
+           (defpc
+             (note "Defpc ~A defined as a non-pointer type #o~o!"
+                   typename last-non-pointer-type-number))
+           (t
+            ;; something else and might not really be a pointer type so warn
+            (warn "defining new type ~A as a pointer type (contest: ~s) #o~o!"
+                  context typename last-pointer-type-number))))
        (push typename types-defined)
-       (setf (microcode-symbol typename) '((:type :micro-return-address))) ; make it easier on the compiler
-       (update-alist typename (list last-pointer-type-number)
-                     **pointer-types**))
+       (setf (microcode-symbol typename)
+             (case context
+               (defreturn
+                '((:type :micro-return-address)))
+               (defpc
+                '((:type :non-pointer-type)))
+               (t
+                '((:type :pointer-type))))) ; make it easier on the compiler
+
+       (cl:if (eql context 'defpc)       
+         (update-alist typename (list last-non-pointer-type-number) **non-pointer-types**)
+         (update-alist typename (list last-pointer-type-number) **pointer-types**))
+
+       (export (list typename) *ulang-pkg*))
       ((pointer-type-p typename)
        (setf (microcode-symbol typename) '((:type :pointer-type)))
-       (push typename types-defined))
+       (push typename types-defined)
+       (export (list typename) *ulang-pkg*))
       (t
        (setf (microcode-symbol typename) '((:type :non-pointer-type)))
-       (push typename types-defined))))
+       (push typename types-defined)
+       (export (list typename) *ulang-pkg*))))
 
   (defun validate-types ()
     "Check that all types in **pointer-types** and
@@ -754,7 +809,7 @@ that were defined but not used"
   ;; we will be interpreting the associated body so we want to do a quick check of it now. We also expand
   ;; macros at this point.
   (let ((ucode (expand-and-validate-ucode body)))
-    (note-type-defined name)
+    (note-type-defined name 'deftype)
     (update-alist :microcode-value ucode (microcode-symbol name))
     (update-alist name ucode *type-dispatch-alist*)))
 
@@ -771,7 +826,7 @@ that were defined but not used"
   ;; for now, it's the same as do-deftype other than a different alist
   (let ((ucode (expand-and-validate-ucode body)))
     ;; (note-tag-defined name) ; plist will get clobbered anyway
-    (note-type-defined name) ; need to assign a type number to it
+    (note-type-defined name 'defreturn) ; need to assign a type number to it
     (update-alist :microcode-value ucode (microcode-symbol name))
     (update-alist name ucode *type-return-dispatch-alist*)))
 
@@ -783,10 +838,15 @@ that were defined but not used"
 ;;  degreee of spaghetti (lots of go-tos) has to do with keeping the
 ;;  microcode as compact as possible, avoiding duplication.
 
+;; 1/27/22 looks like this can also establish a "type" for micro-call
+;; (will be stored in type field of *retpc-count-mark* so also
+;; allocate a non-pointer-type for it!
+
 (defun do-defpc (name body)
-  ;; for now, it's the same as do-deftype< other than a different alist
+  ;; for now, it's the same as do-deftype other than a different alist
 
   (let ((ucode (expand-and-validate-ucode body)))
     (note-tag-defined name)
+    (note-type-defined name 'defpc)
     (update-alist :microcode-value ucode (microcode-symbol name))
     (update-alist name ucode *pc-dispatch-alist*)))

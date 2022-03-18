@@ -1,8 +1,24 @@
 (in-package :microlisp-int)
 
-(fpga-support-version-reporter "FPGA PLA ulisp Compiler" 0 1 0
-                               "Time-stamp: <2022-01-11 17:00:24 gorbag>"
-                               "0.1 release")
+(fpga-support-version-reporter "FPGA PLA ulisp Compiler" 0 2 0
+                               "Time-stamp: <2022-03-18 15:11:50 gorbag>"
+                               "line disambiguation")
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 0.2.0   3/18/22 snapping a line: 0.2 release of library supports scheme-79 test-0 thru test-3 ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; 0.1.3   2/ 9/22 way too many things (fns, variables) with "line" in their name
+;;                    and it's ambiguous.  Splitting so "line" refers to,
+;;                    e.g. an output (log) line, "expression" refers to a
+;;                    'line' of code (single expression in nano or microcode
+;;                    land typically, and because we used (READ) it wasn't
+;;                    confined to a single input line anyway) and "wire" to
+;;                    refer to, e.g., a control or sense 'line' on a register.
+
+;; 0.1.2   2/ 2/22 use intentional upla fns
+
+;; 0.1.1   1/27/22 cosmetics
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 0.1.0   1/11/22 snapping a line: 0.1 release of library supports scheme-79 test-0 and test-1. ;;
@@ -31,9 +47,9 @@ that gets assembled into the final form just as in the AIM"))
 ;; for this release, this is the interface to project specific
 ;; code. Eventually, I plan to rewrite more of that code to make it
 ;; generic so the interface will be pushed down a couple levels of
-;; abstraction than just the "line".
-(defgeneric compile-line (line)
-  (:documentation "project-specific compilation of a line (represented
+;; abstraction than just the "expression".
+(defgeneric compile-expression (expression)
+  (:documentation "project-specific compilation of an expression (represented
   as a list) into code suitable for the assembler"))
 
 (defmethod compile-microcode (filename)
@@ -47,7 +63,7 @@ that gets assembled into the final form just as in the AIM"))
                          :prefix (setq fpga-pla-build-tools:*upla-file-name* (format nil "uPLA-~A-" (pathname-name pathname)))
                          :delete-when-close nil)))
 
-    (announcement-banner (format nil "ucode-compiler run ~a" (date-string)) fpga-pla-build-tools:*upla-stream*)
+    (announcement-banner (format nil "ulisp-compiler run ~a" (date-string)) fpga-pla-build-tools:*upla-stream*)
     (announce-project-version fpga-pla-build-tools:*upla-stream*) ; full versioning for now
 
     ;; prevalidate, set up tables, etc.
@@ -87,7 +103,7 @@ that gets assembled into the final form just as in the AIM"))
                ;; we can GOTO them). We can add that later if we need
                ;; to.
                  
-               ;; Instead, each line of the symbolic microcode is
+               ;; Instead, each expression of the symbolic microcode is
                ;; transformed into a list of four elements by calling
                ;; the function associated with the microcode name
                ;; (created via the defufn macro). We can also get the
@@ -112,10 +128,8 @@ that gets assembled into the final form just as in the AIM"))
   "compiles the microlisp function into micro PLA"
   (let ((fpga-pla-build-tools:*function-being-compiled* function-tag))
     (fpga-pla-build-tools:upla-write-header "~a ~a:" tag-type function-tag)
-    (fpga-pla-build-tools:upla-write-rtn function-tag) ; put the tag in the file
-    (dolist (line function-definition)
-      (let ((compiled-line (compile-line line)))
-        (declare (ignore compiled-line))
-        ;; do this inside the compile-fn
-        #||(mapc #'upla-write-rtn compiled-line)||# ; break apart expanded forms to see easier
+    (fpga-pla-build-tools:upla-write-tag function-tag) ; put the tag in the file
+    (dolist (expression function-definition)
+      (let ((compiled-expression (compile-expression expression))) ; side effect fills in upla-stream
+        (declare (ignore compiled-expression))
         ))))

@@ -1,10 +1,14 @@
 (in-package :fpga-pads)
 
-(fpga-support-version-reporter "FPGA Pad Support" 0 1 0 
-                               "Time-stamp: <2022-01-11 13:48:37 gorbag>"
-                               "0.1 release")
+(fpga-support-version-reporter "FPGA Pad Support" 0 2 0 
+                               "Time-stamp: <2022-03-18 15:09:36 gorbag>"
+                               "0.2 release")
 
 ;; support for pads
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 0.2.0   3/18/22 snapping a line: 0.2 release of library supports scheme-79 test-0 thru test-3 ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 0.1.0   1/11/22 snapping a line: 0.1 release of library supports scheme-79 test-0 and test-1. ;;
@@ -72,8 +76,6 @@ however, then we continue to test the pad until it does return true
 and then invoke the callback function (which can ignore the second
 parameter as it will always be non-nil). This is useful, e.g., for
 monitoring the *interrupt-request* pad."
-      (declare (ignorable test-immediate-p)) ; if validity is :any or :all we'll treat it as if this is set anyway.
-      
       (cl:cond
         ((and callback-fn retest-until-p)
          ;; if we're in the right phase AND the test holds, call

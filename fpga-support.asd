@@ -1,4 +1,4 @@
-;; Time-stamp: <2022-01-11 12:06:11 gorbag>
+;; Time-stamp: <2022-02-08 13:35:45 gorbag>
 
 (cl:in-package :asdf)
 
@@ -32,7 +32,7 @@
     ((:module "gui" :serial t
       :components
       ((:file "grid-impl"))) ;patched version of LW CAPI demo
-     
+
      (:file "fpga-diagnostics"))) ;diagnostics 'package'
 
    ;; other things may be both for simulation and generating FPGA HDL
@@ -60,6 +60,16 @@
      (:file "registers")
      (:file "pads")))
 
+   ;; here we describe the FPGA platform we are using, as well as any
+   ;; additional relevant hardware (for which we may want to have supporting
+   ;; microcode!). Note the intent is, like everything else, this will drive
+   ;; HDL generation as well as building simulated versions (at this time that
+   ;; would be CAPI).
+   
+   (:module "hardware" :serial t
+    :components
+    ())
+   
    ;; and then we have PLA (programmable logic arrays) that for us are
    ;; essentially EPROMS: we have tools for specifying what to put in
    ;; them and use them as our microcode store, for instance (but also
@@ -71,7 +81,7 @@
    ;; source code console display, for instance) might only be
    ;; 'available' in simulation and thus get put into representations
    ;; that are defined in the simulation module, above.
-   
+
    (:module "pla-support" :serial t
     :components
     ((:file "common-defs")

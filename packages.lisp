@@ -1,16 +1,38 @@
 (in-package :cl-user)
 (defvar *fpga-support-version-reporter-initializations* nil)
 
-(cl-lib:detailed-version-reporter "FPGA Dev Support packages" 0 1 2
-                                  "Time-stamp: <2022-01-18 12:01:31 gorbag>"
-                                  "remove special-register-p"
+(cl-lib:detailed-version-reporter "FPGA Dev Support packages" 0 2 0
+                                  "Time-stamp: <2022-03-18 15:08:18 gorbag>"
+                                  "*words-size* and *register-size* to project-defs"
                                   :initialization-list-symbol *fpga-support-version-reporter-initializations*)
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 0.2.0   3/18/22 snapping a line: 0.2 release of library supports scheme-79 test-0 thru test-3 ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; 0.1.7   2/24/22 move *word-size* and *register-size* to project defs (so it's
+;;                    clear the project can pick something else)
+
+;; 0.1.6   2/ 9/22 way too many things (fns, variables) with "line" in their name
+;;                    and it's ambiguous.  Splitting so "line" refers to,
+;;                    e.g. an output (log) line, "expression" refers to a
+;;                    'line' of code (single expression in nano or microcode
+;;                    land typically, and because we used (READ) it wasn't
+;;                    confined to a single input line anyway) and "wire" to
+;;                    refer to, e.g., a control or sense 'line' on a register.
+
+;; 0.1.5   2/ 2/22 upla-write-code upla-write-code-annotation upla-write-tag
+
+;; 0.1.4   1/31/22 ucode-suppress-logging
+
+;; 0.1.3   1/25/22 export macro tags fail-tag and success-tag so they
+;;                    can be used in the body
+
 ;; 0.1.2   1/18/22 cleanup obsolete code: removing special treatment of registers
-;;                    which required multiple control lines for TO as new covering
+;;                    which required multiple control wires for TO as new covering
 ;;                    set computation deals with it.
 
-;; 0.1.1   1/13/22 add ability to declare covering sets for control lines and look them up.
+;; 0.1.1   1/13/22 add ability to declare covering sets for control wires and look them up.
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 0.1.0   1/11/22 snapping a line: 0.1 release of library supports scheme-79 test-0 and test-1. ;;
@@ -23,7 +45,7 @@
 
 ;; 0.0.18  1/ 7/22 pad-defn, etc.
 ;;                 *debug-compiler*
-;;                 compile-microcode compile-function compile-line
+;;                 compile-microcode compile-function compile-expression
 ;;                 run-assembler, run-assembler-pass*
 
 ;; 0.0.17  1/ 6/22 analyze-code now a generic function for the validator
@@ -128,6 +150,10 @@
    #:*debug-pad-timing* #:*debug-validator* #:*debug-precompiler* #:*debug-compiler*
    #:*debug-assembler*
 
+   ;; important configuration parameters
+   #:*word-size* #:*register-size*
+
+
    ;; generic functions the project should define methods for
    #:generate-cond-test #:analyze-code
 
@@ -188,7 +214,6 @@
   (:documentation "language symbols we commonly have to import explicitly from microlisp pkg")
   (:import-from common-lisp t nil)
   (:export
-   ;; commonly used within the (compiled) code (probably should have a way to declare these; TBD)
    #:from #:to #:go-to #:branch #:branch-type #:from-type-const #:from-const #:tag
    #:sense-and-branch #:sense-type-and-branch ; nano-operations
    
@@ -236,7 +261,7 @@
    #:generate-cond-test
 
    ;; toplevel compiler fns
-   #:compile-microcode #:compile-function #:compile-line
+   #:compile-microcode #:compile-function #:compile-expression
            
    ;;; database vars
    #:*registers-whose-types-are-tags*
@@ -244,12 +269,12 @@
    #:*ulisp-operations-alist* #:*ulisp-macro-alist* 
    #:*special-ucode-operations-alist*
    #:*internal-ucode-operations-alist*
-   #:*control-line-covering-sets-alist*
+   #:*control-wire-covering-sets-alist*
 
    ;;; database functions
    #:mark-register-use  #:create-ulopd #:create-ulmd
    #:reset-covering-set-alist #:declare-covering-set #:find-covering-set
-   #:control-lines-for-register-op
+   #:control-wires-for-register-op
    #:declare-register-control-wires #:declare-register-sense-wires
    
    ;; predicate support
@@ -261,8 +286,8 @@
 
    #:opcode-fn
    #:upred-p #:upred-desc #:ufun-p #:umac-p
-   #:ucode-sense-line #:ucode-pred-type #:ucode-pred-from-register #:ucode-pred-defn
-   #:ucode-precedence #:ucode-constituent
+   #:ucode-sense-wire #:ucode-pred-type #:ucode-pred-from-register #:ucode-pred-defn
+   #:ucode-precedence #:ucode-constituent #:ucode-suppress-logging
    #:microcodes-used  
 
    #:microcode-symbol #:microcode-declarations
@@ -281,8 +306,9 @@
   (:use :microlisp-int :debug-support :fpga-project-defs :fpga-support :common :cl-lib common-lisp)
   
   (:export
-   #:*upla-stream* #:*upla-file-name*
+   #:*upla-stream* #:*upla-file-name* #:*upla-suppress-annotation*
    #:upla-write #:upla-write-rtn #:upla-write-double-rtn #:upla-write-comment #:upla-write-header
+   #:upla-write-code-annotation #:upla-write-code #:upla-write-tag #:upla-write-local-comment
    #:write-generated-code
 
    ;; parsing microlisp
@@ -290,12 +316,12 @@
 
    #:parse-to-address-term
    
-   #:*from-register* #:*to-register* #:*line-opcode* #:*enclosing-opcode*
+   #:*from-register* #:*to-register* #:*expression-opcode* #:*enclosing-opcode* #:*constituent-assignment-fn*
    #:*function-being-compiled*
    #:*defumac-macros* #:*defupred-predicates*
 
    ;; defining microlisp operations, predicates, and macros
-   #:defufn #:defumac #:defupred
+   #:defufn #:defumac #:defupred #:fail-tag #:success-tag #:assign-constituent-highlevel #:assign-constituent-lowlevel
 
    ;; assembling
    #:*nanocontrol-symtab* #:*nanocontrol-array*
@@ -318,7 +344,7 @@
 (defpackage :fpga-registers
   (:use :debug-support :microlisp-int :fpga-project-defs :fpga-support :common :cl-lib common-lisp)
   (:export
-   #:make-register #:*register-size* #:*all-register-names*
+   #:make-register #:*all-register-names*
    #:register-flags #:register-flag-accessor #:register-alias #:register-refs #:register-alist
 
    #:strip-register-name #:make-register-field-symbol
@@ -326,10 +352,10 @@
    #:latch-name
 
    ;; register definitions
-   #:defchip-reg #:defchip-special-reg #:register-p #:valid-control-lines #:valid-sense-lines
+   #:defchip-reg #:defchip-special-reg #:register-p #:valid-control-wires #:valid-sense-wires
    #:sense-wire-name #:sense-wire-register #:sense-wire-encoding
 
-   #:set-control-line-fn
+   #:set-control-wire-fn
    ))
 
 (defpackage :fpga-pads

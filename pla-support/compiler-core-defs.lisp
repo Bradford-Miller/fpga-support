@@ -1,8 +1,31 @@
 (in-package :fpga-pla-build-tools)
 
-(fpga-support-version-reporter "FPGA PLA ulisp Comp. Defs" 0 1 0
-                               "Time-stamp: <2022-01-11 17:02:48 gorbag>"
-                               "0.1 release")
+(fpga-support-version-reporter "FPGA PLA ulisp Comp. Defs" 0 2 0
+                               "Time-stamp: <2022-03-18 15:11:34 gorbag>"
+                               "line disambiguation")
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 0.2.0   3/18/22 snapping a line: 0.2 release of library supports scheme-79 test-0 thru test-3 ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; 0.1.4   2/ 9/22 way too many things (fns, variables) with "line" in their name
+;;                    and it's ambiguous.  Splitting so "line" refers to,
+;;                    e.g. an output (log) line, "expression" refers to a
+;;                    'line' of code (single expression in nano or microcode
+;;                    land typically, and because we used (READ) it wasn't
+;;                    confined to a single input line anyway) and "wire" to
+;;                    refer to, e.g., a control or sense 'line' on a register.
+
+;; 0.1.3   1/31/22 add explicit supress-logging key to defufn to prevent
+;;                      overloading :constituent for this
+
+;; 0.1.2   1/27/22 add code to support expansion for constitutent
+;;                      assignment
+
+;; 0.1.1   1/25/22 add :arg option for defupred which just puts the
+;;                      argument or from register onto the bus (rather
+;;                      than taking the car or cdr of what it points
+;;                      to).
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 0.1.0   1/11/22 snapping a line: 0.1 release of library supports scheme-79 test-0 and test-1. ;;
@@ -63,9 +86,10 @@
 
 (defvar *from-register* nil)
 (defvar *to-register* nil)
-(defvar *line-opcode* nil)
+(defvar *expression-opcode* nil)
 (defvar *enclosing-opcode* nil)
 (defvar *function-being-compiled* nil)
+(defvar *constituent-assignment-fn* nil)
 (defvar *defumac-macros* nil
   "macros defined via defumac")
 (defvar *defupred-predicates* nil
@@ -185,13 +209,16 @@ compiler later, but can also be a symbolic tag referring to a location."
   (let ((args-last (extract-keyword :args-last lambda-list))
         (ucode-expansion (extract-keyword :expansion lambda-list))
         (constituent-status (extract-keyword :constituent lambda-list))
+        (suppress-logging (extract-keyword :suppress-logging lambda-list))
         (special-declarations (extract-keyword :declarations lambda-list)))
       `(cl:progn
-         (defun ,fn-name-symbol (,@(remove-keyword-arg :args-last ; yes I'm sure we can be more efficent here.
-                                                   (remove-keyword-arg :expansion
-                                                                       (remove-keyword-arg :declarations
-                                                                                           (remove-keyword-arg :constituent
-                                                                                                               lambda-list)))))
+         (defun ,fn-name-symbol (,@(remove-keyword-args
+                                    '(:args-last 
+                                      :expansion
+                                      :declarations
+                                      :constituent
+                                      :suppress-logging)
+                                    lambda-list))
            ,@body)
          ;; particularly an issue before we repatriate defufn into support
          ,@(unless (or (eq (symbol-package fn-name-symbol) *ulang-shared-pkg*) ; already in the right place
@@ -207,9 +234,14 @@ compiler later, but can also be a symbolic tag referring to a location."
          ,(if ucode-expansion
             `(setup-ucode-expansion ',fn-name-symbol ',ucode-expansion))
          ,(if special-declarations
-            `(setf (microcode-declarations ',fn-name-symbol) ',special-declarations))
+              `(setf (microcode-declarations ',fn-name-symbol) ',special-declarations))
+         ;; constituent means the result of the op is typically
+         ;; assigned to another register (appears inside an assign or
+         ;; morally equivalent statement)
          ,(if constituent-status
-            `(setf (ucode-constituent ',fn-name-symbol) ',constituent-status))
+              `(setf (ucode-constituent ',fn-name-symbol) ',constituent-status))
+         ,(if suppress-logging
+            `(setf (ucode-suppress-logging ',fn-name-symbol) ',suppress-logging))
          ;; so we know we are running a hardware supported function:
          (setf (opcode-fn ',fn-name-symbol) #',fn-name-symbol))))
 
@@ -219,20 +251,22 @@ compiler later, but can also be a symbolic tag referring to a location."
      (defufn ,mac-name-symbol (,@lambda-list) ,@body)
      (pushnew ',mac-name-symbol *defumac-macros*)))
 
-(defmacro defupred (pred-symbol (sense-line indirect-p &optional register) &body body)
+(defmacro defupred (pred-symbol (sense-wire indirect-p &optional register) &body body)
   "defupred declares microcode predicates.
 For now, it just sets up a property list. indirect-p if false means
-the predicate tests the sense-line on the (from) register, and if :car
+the predicate tests the sense-wire on the (from) register, and if :car
 means it tests the car of what the (from) register points to via
-testing the sense-line on *bus*, and if :cdr the cdr. If register is
-supplied, it is an implicit FROM register for this predicate. If body
-is present, it constructs a function of two arguments (fail-tag and
-success-tag) that builds a specialized set of microinstructions that
-result in a branch."
+testing the sense-wire on *bus*, and if :cdr the cdr, and if :arg the
+register directly (generally this means to move the register onto the
+bus to enable the comparison). If register is supplied, it is an
+implicit FROM register for this predicate. If body is present, it
+constructs a function of two arguments (fail-tag and success-tag) that
+builds a specialized set of microinstructions that result in a
+branch."
   `(cl:progn
      (export-ulisp-symbol ',pred-symbol)
      (setf (upred-p ',pred-symbol) t)
-     (setf (ucode-sense-line ',pred-symbol) ',sense-line)
+     (setf (ucode-sense-wire ',pred-symbol) ',sense-wire)
      (setf (ucode-pred-type ',pred-symbol) ,indirect-p)
      (pushnew ',pred-symbol *defupred-predicates*) ; for symmetry with defumac
      ,(when register
@@ -242,3 +276,21 @@ result in a branch."
            (defun ,pred-symbol (fail-tag success-tag)
              ,@body)
            (setf (ucode-pred-defn ',pred-symbol) ',pred-symbol)))))
+
+(defun assign-constituent-highlevel (result-reference)
+  "when we are compiling an embedded expression for a constituent,
+this allows us to produce the code to assign the result to the correct
+target, generating microlisp for compilation."
+  (assert *constituent-assignment-fn* () "No constituent assignment function!")
+  (append *constituent-assignment-fn* (list result-reference)))
+
+#||
+(defun assign-constituent-lowlevel (result-reference &optional lowlevel-ready-p)
+  "Similar to highlevel, but generates assembly code (result of compilation)."
+  (cl:cond
+   (lowlevel-ready-p
+    )
+   (t
+    (let ((highlevel (assign-constituent-highlevel result-reference)))
+      (apply (car highlevel) (cdr highlevel)))))) ; calls the compiler on the form
+||#
