@@ -1,16 +1,54 @@
 # Common Lisp support for defining FPGA structures, simulation support code and firmware compilation
 
-Time-stamp: <2022-03-18 15:06:10 gorbag>
+Time-stamp: <2022-03-23 12:16:17 gorbag>
 
-After some initial work on simulating the Scheme-79 chip (see the
-project files), code that could be reused for other such FPGA projects
-is being segregated here. In particular, code for compiling and
-assembling uPLA code (which is used to populate on-chip programmable
-logic arrays), code needed for specifying clocks, registers, etc. that
-should allow us to compile a spec for a chip into HDL that is suitable
-for conversion into a bit stream for an FPGA (e.g., by presenting the
-HDL to such tools, not to replicate those tools).
+After some initial work on simulating the Scheme-79 chip (see the project
+files), code that could be reused for other such FPGA projects is being
+segregated here. In particular, code for compiling and assembling uPLA code
+(which is used to populate on-chip programmable logic arrays), code needed for
+specifying clocks, registers, etc. that should allow us to compile a spec for
+a chip into HDL that is suitable for conversion into a bit stream for an FPGA
+(e.g., by presenting the HDL to such tools, not to replicate those tools).
 
+## Loading / Running the FPGA
+
+(This is evolving)
+
+Right now, I'm using [GHDL](https://ghdl.github.io/ghdl/index.html) since it works on
+my development Mac and I don't have to keep a VM running with Linux (but will
+eventually do so to run Vivado to program an
+[Arty A7](https://digilent.com/shop/arty-a7-artix-7-fpga-development-board/). Eventually
+I will include scripts needed to either run the simulation using ghdl or
+vivado, but for now you'll have to figure this out on your own (note that
+vivado can be run from the command line or a batch file:
+
+
+```
+vivado -mode tcl # command-line mode
+vivado -mode batch -source tcl-script.tcl # scripted mode
+```
+
+Note that it may be possible to use https://openocd.org both to load the
+bitstream and support debugging from the Mac as well, but other than the link
+I don't (yet) know much about it.
+
+I am manually running... (TBD)
+
+## Loading / Running the Simulation on the host
+
+Right now, the macros generate everything needed to build a simulation on the
+host machine (in Lisp code). See the Scheme-79 project for an example of usage
+and running the machine (which consists of setting up the RAM with some
+content, triggering the Power-On-Reset, and then starting the clock simulation
+either by microtick, tick, or just allowing it to rip until a breakpoint is
+reached). The test function does this for a particular microcode and RAM
+content, so look at tests/test-0.* for a more specific example of this.
+
+More detail to come! (TBD)
+
+## USAGE
+
+Documentation for the individual macros to come here. (TBD)
 
 ## Assumptions
 
@@ -34,7 +72,6 @@ be suitable for such use in the future!)
     get to what I think MIT used for Scheme-79 (given published
     references), but given the sometimes sketchy documentation I'm
     going to take some liberties.
-
     
 ## Design Goals
 * To the extent possible, we will want 'the same code' (again mostly
@@ -43,6 +80,8 @@ be suitable for such use in the future!)
 * Specifics about microprogram constants (e.g. register names and
   characteristics) will be declaratory, thus part of both the
   'microprogrammer's model' and the actual hardware realization.
+
+
     
 ## Status:
 

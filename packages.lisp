@@ -1,10 +1,16 @@
 (in-package :cl-user)
 (defvar *fpga-support-version-reporter-initializations* nil)
 
-(cl-lib:detailed-version-reporter "FPGA Dev Support packages" 0 2 0
-                                  "Time-stamp: <2022-03-18 15:08:18 gorbag>"
-                                  "*words-size* and *register-size* to project-defs"
+(cl-lib:detailed-version-reporter "FPGA Dev Support packages" 0 2 3
+                                  "Time-stamp: <2022-03-24 12:24:16 gorbag>"
+                                  "add make-pad to common"
                                   :initialization-list-symbol *fpga-support-version-reporter-initializations*)
+
+;; 0.2.3   3/24/22 make-pad in common
+
+;; 0.2.2   3/23/22 center-pad-string in common
+
+;; 0.2.1   3/21/22 new VHDL package
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 0.2.0   3/18/22 snapping a line: 0.2 release of library supports scheme-79 test-0 thru test-3 ;;
@@ -119,6 +125,9 @@
            #:bit-vector->integer #:integer->bit-vector #:make-n-bit-vector #:bv-zerop #:copy-field
            #:shift-right #:zerop-field #:decrement-field #:increment-field
 
+           ;; string ops
+           #:center-pad-string #:make-pad
+           
            ;; announcements
            #:print-semi-line #:announcement-banner #:*banner-length*
 
@@ -160,6 +169,11 @@
    ;; generic functions the project can optionally define methods for
    #:clear-project-specific-tables
    #:initialize-project-specific-tables #:export-ulisp-symbol))
+
+(defpackage :vhdl ;; VHDL generation
+  (:use :fpga-project-defs :fpga-support :common :cl-lib common-lisp)
+  (:export
+   #:ensure-vhdl-stream #:*vhdl-stream*))
 
 (defpackage :debug-support
   (:use :fpga-project-defs :fpga-support :common :cl-lib common-lisp)

@@ -1,4 +1,4 @@
-;; Time-stamp: <2022-02-08 13:35:45 gorbag>
+;; Time-stamp: <2022-03-24 12:43:31 gorbag>
 
 (cl:in-package :asdf)
 
@@ -34,6 +34,13 @@
       ((:file "grid-impl"))) ;patched version of LW CAPI demo
 
      (:file "fpga-diagnostics"))) ;diagnostics 'package'
+
+   ;; stuff that is for vhdl generation ONLY should go into this directory
+   (:module "vhdl" :serial t
+    :components
+    ((:file "vhdl-defs")
+     (:file "vhdl-comments")
+     (:file "vhdl-components")))
 
    ;; other things may be both for simulation and generating FPGA HDL
    ;; we separate those in general to stuff that is combinatoric, and
