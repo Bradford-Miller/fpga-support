@@ -1,6 +1,6 @@
 # Common Lisp support for defining FPGA structures, simulation support code and firmware compilation
 
-Time-stamp: <2022-03-23 12:16:17 gorbag>
+Time-stamp: <2022-03-24 14:02:48 gorbag>
 
 After some initial work on simulating the Scheme-79 chip (see the project
 files), code that could be reused for other such FPGA projects is being
@@ -77,6 +77,20 @@ be suitable for such use in the future!)
 * To the extent possible, we will want 'the same code' (again mostly
   declaratory) to generate HDL that specifies the FPGA, and also the
   simulation of that component (under the host Lisp).
+  * That means that we can simulate to some degree the intent with a lot of
+    tools for looking at the registers, single stepping at the nanocode level,
+    poking through memory, using the Lisp simulation.
+  * It also means we will be able to SEPARATELY simulate the VHDL using an
+    appropriate tool (e.g., ghdl) to see if the behavior is correct / matches
+    the lisp simulation. It is probably the case we won't have the same
+    flexibility we will have with the Lisp simulation, e.g. source-level
+    microcode and nanocode debugging in the console.
+    * However, we may want to add communications between the FPGA
+      (e.g. through the USB/JTAG interface) and use that to have a "remote"
+      front-panel that can do such inspection (presumably needing some
+      additional functionality on the FPGA in terms of IP or other ways to do
+      the monitoring). There are commercial packages for this (with certain
+      development boards) and OpenOCD might be of use here as well.
 * Specifics about microprogram constants (e.g. register names and
   characteristics) will be declaratory, thus part of both the
   'microprogrammer's model' and the actual hardware realization.

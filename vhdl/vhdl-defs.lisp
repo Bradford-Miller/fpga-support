@@ -1,10 +1,10 @@
 (in-package :vhdl)
 
 (fpga-support-version-reporter "FPGA VHDL Defs" 0 2 0
-                               "Time-stamp: <2022-03-21 16:47:48 gorbag>"
+                               "Time-stamp: <2022-04-01 17:56:51 gorbag>"
                                "new")
 
-;; 0.2.0   3/21/22 New package for VHDL generator defs
+;; 0.2.0   3/21/22 -- 4/1/22 New package for VHDL generator defs
 
 ;; when we are evaluating macros that build both simulation and VHDL
 ;; components, we need to have a file to put the VHDL in. It probably makes
@@ -20,6 +20,16 @@
 (as is Lisp, by default) so this is just to aid in debugging when
 reading the HDL, and will not change the behavior of the generated
 code.")
+
+(defparameter *special-constants* '((:zero . "'0'")
+                                    (:one . "'1'")
+                                    (:comma . ",")
+                                    (:semi . ";")
+                                    (:= . ":="))
+  "Alist of special constants in VHDL that we can't as easily
+represent in Lisp other than as strings - this is just to simplify
+calling the macros using, e.g. :zero instead of '0' which will be
+mistaken as quoting the following symbol.")
 
 (defun vhdl-pathname (x)
   (let ((host (pathname-host x))
