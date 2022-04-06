@@ -1,6 +1,6 @@
 # Common Lisp support for defining FPGA structures, simulation support code and firmware compilation
 
-Time-stamp: <2022-03-24 14:02:48 gorbag>
+Time-stamp: <2022-04-04 12:03:58 gorbag>
 
 After some initial work on simulating the Scheme-79 chip (see the project
 files), code that could be reused for other such FPGA projects is being
@@ -54,11 +54,11 @@ Documentation for the individual macros to come here. (TBD)
 
 Note our code here makes a few assumptions about the FPGAs we are going
 to build (it is NOT a generic Lisp->HDL library, though some parts may
-be suitable for such use in the future!)
+be suitable for such use!)
 
 * We are going to describe processors (i.e., pure digital components,
   not analogue hardware), and common peripherals (allowing SOCs for a
-  sufficiently limited conscept of system).
+  sufficiently limited concept of system).
 * We will emphasize a declaratory approach to describing the hardware
   to the extent possible
 * The kind of processors we describe are expected to be microprogrammed

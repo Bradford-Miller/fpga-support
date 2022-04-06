@@ -53,3 +53,9 @@ sense to put it somewhere that will be easier to pass to our vhdl simulation
 tools or the design synthesizer and bitstream generator."
   (unless *vhdl-stream*
     (setq *vhdl-stream* (open-vhdl-stream "/private/var/tmp/generated.vhdl"))))
+
+;; commonly used to deal with passing symbols instead of strings to vhdl macros
+(defun downcase-if-symbol (x)
+  (if (stringp x)
+    x
+    (string-downcase (string x))))
