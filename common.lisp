@@ -1,9 +1,15 @@
 (in-package :common)
 
-(cl-lib:detailed-version-reporter "FPGA Dev Support Common" 0 2 0
-                                  "Time-stamp: <2022-03-18 15:07:08 gorbag>"
-                                  "fix date-string with leading zero pads"
+(cl-lib:detailed-version-reporter "FPGA Dev Support Common" 0 2 2
+                                  "Time-stamp: <2022-03-24 12:26:53 gorbag>"
+                                  "make-pad"
                                   :initialization-list-symbol cl-user::*fpga-support-version-reporter-initializations*)
+
+;; 0.2.2   3/24/22 make-pad fn
+
+;; 0.2.1   3/23/22 get rid of empty labels() form in note-banner,
+;;                    and second arg is no longer needed
+;;                 new center-pad-string
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 0.2.0   3/18/22 snapping a line: 0.2 release of library supports scheme-79 test-0 thru test-3 ;;
@@ -78,32 +84,54 @@
 ;; banners
 (defparameter *banner-length* 120)
 
+(let ((pad-alist nil))
+  (defun make-pad (l)
+    "return a string made up of space characters of the required length. We do this a lot when pretty-printing
+various output streams that consing fresh ones each time seems a waste!"
+    (or (cdr (assoc l pad-alist))
+        (progfoo (make-string l :initial-element #\space)
+          (update-alist l foo pad-alist)))))
 
-(defun do-banner-string (string max-surround) ; just a big number
-  (let* ((stringlen (length string))
-         (modlen (- *banner-length* stringlen 2)) ; allow for spaces around string
+(defun center-pad-string (s width)
+  (declare (type string s)
+           (type fixnum width))
+  
+  (let* ((stringlen (length s))
+         (modlen (- width stringlen))
          (prelen (floor (/ modlen 2)))
-         (actual-prelen (min prelen max-surround))
-         (postlen (- modlen prelen))
-         (actual-postlen (min postlen max-surround)))
+         (postlen (- modlen prelen)))
+    (concatenate
+     'string
+     (make-pad prelen)
+     s
+     (make-pad postlen))))
 
-    (note (format nil "~a~a~a~a~a" 
-                  (make-string actual-prelen :initial-element #\*)
-                  (make-string (1+ (- prelen actual-prelen)) :initial-element #\space)
-                  string
-                  (make-string (1+ (- postlen actual-postlen)) :initial-element #\space)
-                  (make-string actual-postlen :initial-element #\*)))))
+(defun do-banner-string (string min-stringlen) ; just a big number
+  (declare (type string string)
+           (type fixnum min-stringlen))
+  
+  (let* ((stringlen (length string))
+         (modlen (- *banner-length* (max stringlen min-stringlen) 2)) ; allow for spaces around string
+         (prelen (floor (/ modlen 2)))
+         (postlen (- modlen prelen)))
+
+    (note (format nil "~a ~a ~a" 
+                  (make-string prelen :initial-element #\*)
+                  (center-pad-string string (max stringlen min-stringlen))
+                  (make-string postlen :initial-element #\*)))))
 
 
-(defun note-banner (strings &optional (max-surround *banner-length*))
+(defun note-banner (strings)
+  (declare (type list strings))
+  
   (let* ((maxstringlen (apply #'max (mapcar #'length strings)))
-         (*banner-length* (max *banner-length* (+ maxstringlen 8))))
-    (labels ()
-      (prin-note-ast *banner-length*)
-      (do-banner-string (make-string maxstringlen :initial-element #\space) max-surround)
-      (mapc #'(lambda (x) (do-banner-string x max-surround)) strings)
-      (do-banner-string (make-string maxstringlen :initial-element #\space) max-surround)
-      (prin-note-ast *banner-length*))))
+         (*banner-length* (max *banner-length* (+ maxstringlen 8)))
+         (spaces (make-string maxstringlen :initial-element #\space)))
+    (prin-note-ast *banner-length*)
+    (do-banner-string spaces maxstringlen)
+    (mapc #'(lambda (x) (do-banner-string x maxstringlen)) strings)
+    (do-banner-string spaces maxstringlen)
+    (prin-note-ast *banner-length*)))
 
 (defun prin-semi (n &optional (stream *error-output*))
   (dotimes (i n)
