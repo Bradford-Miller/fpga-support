@@ -17,3 +17,4 @@
 *.wx32fsl
 .DS_Store
 *~
+*.cf
