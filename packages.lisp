@@ -2,7 +2,7 @@
 (defvar *fpga-support-version-reporter-initializations* nil)
 
 (cl-lib:detailed-version-reporter "FPGA Dev Support packages" 0 2 3
-                                  "Time-stamp: <2022-03-24 12:24:16 gorbag>"
+                                  "Time-stamp: <2022-04-12 18:01:35 gorbag>"
                                   "add make-pad to common"
                                   :initialization-list-symbol *fpga-support-version-reporter-initializations*)
 
@@ -368,6 +368,7 @@
    ;; register definitions
    #:defchip-reg #:defchip-special-reg #:register-p #:valid-control-wires #:valid-sense-wires
    #:sense-wire-name #:sense-wire-register #:sense-wire-encoding
+   #:get-sense-wire-encoding
 
    #:set-control-wire-fn
    ))

@@ -1,8 +1,13 @@
 (in-package :vhdl)
 
-(fpga-support-version-reporter "FPGA VHDL Components" 0 2 1
-                               "Time-stamp: <2022-04-04 15:11:14 gorbag>"
-                               "add simple comments")
+(fpga-support-version-reporter "FPGA VHDL Components" 0 2 2
+                               "Time-stamp: <2022-04-11 17:11:22 gorbag>"
+                               "defcentity")
+
+;; 0.2.2   4/11/22 add defcentity for complex entities (>1 library)
+;;                    This will be needed so we can include predefined VHDL
+;;                    generated (by hand mostly) to support the lisp macros
+;;                    for specifying processors
 
 ;; 0.2.1   4/ 5/22 add simple comments (:scomment). These are not centered
 ;;                    horizontally.
@@ -119,7 +124,19 @@ std_logic_vector(3 downto 0)"
         `(prin-initial-library-usage ',library ',usage-terms))
      (prin-entity ,(downcase-if-symbol entity-name) ',body)
      (terpri *vhdl-stream*)))
-  
+
+(defmacro defcentity (entity-name library-spec-list &body body)
+  "similar to defentity, but takes a list of library/usage spec terms, e.g.
+\(defcentity foo ((ieee ieee.std_logic_1164.all ieee.numeric_std.all)
+                  (lib lib.clock.all)) ..."
+  `(progn
+     ,@(mapcar 
+        #'(lambda (libspec)
+            `(prin-initial-library-usage ',(car libspec) ',(cdr libspec)))
+        library-spec-list)
+     (prin-entity ,(downcase-if-symbol entity-name) ',body)
+     (terpri *vhdl-stream*)))
+
 ;; architecture. refers to an entity by name, and inherits library/usage from
 ;; that entity.  it's up to the user to make sure that the architecture is
 ;; synthesizable. There are two "kinds" of architecture, one is just RTL and

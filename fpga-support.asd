@@ -35,12 +35,24 @@
 
      (:file "fpga-diagnostics"))) ;diagnostics 'package'
 
-   ;; stuff that is for vhdl generation ONLY should go into this directory
-   (:module "vhdl" :serial t
+   ;; stuff that is for VHDL generation ONLY should go into this directory
+   (:module "VHDL" :serial t
     :components
     ((:file "vhdl-defs")
      (:file "vhdl-comments")
      (:file "vhdl-components")))
+
+   ;; stuff that is for XDC gneeration should go into this directory
+   ;; (XDC = Xilinx Design Constraints: this is what we need to
+   ;; actually synthesize a design for an FPGA and includes
+   ;; information not needed for simulation, like clock frequency)
+   ;;
+   ;; generally speaking we have to pass XDC information to Vivado via
+   ;; TCL so there may be some TCL support in this directory as well,
+   ;; including that needed to run Vivado from the command line.
+   (:module "XDC" :serial t
+    :components
+    ())
 
    ;; other things may be both for simulation and generating FPGA HDL
    ;; we separate those in general to stuff that is combinatoric, and

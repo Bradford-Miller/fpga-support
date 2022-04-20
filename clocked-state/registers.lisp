@@ -1,8 +1,10 @@
 (in-package :fpga-registers)
 
-(fpga-support-version-reporter "FPGA Register Support" 0 2 0
-                               "Time-stamp: <2022-03-18 15:10:02 gorbag>"
-                               "explicit word-size")
+(fpga-support-version-reporter "FPGA Register Support" 0 2 1
+                               "Time-stamp: <2022-04-12 18:25:14 gorbag>"
+                               "move get-sense-wire-encoding here from machine-predefs")
+
+;; 0.2.1   4/12/22 moved get-sense-wire-encoding here from machine-predefs
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 0.2.0   3/18/22 snapping a line: 0.2 release of library supports scheme-79 test-0 thru test-3 ;;
@@ -127,8 +129,8 @@ since they act similarly, just not in the programmers model)")
 ;; field specifics are project specific, so we only put the helper
 ;; functions here not the field definitions.
 
-;; latches are similar to registers, but typically associated with pads, which have the same symbol format
-;; as registers (i.e. *<name>*)
+;; latches are similar to registers, but typically associated with pads, which
+;; have the same symbol format as registers (i.e. *<name>*)
 
 (defun latch-name (name)
   "return the name for the latch (memory/flip flop) of a pad"
@@ -138,7 +140,7 @@ since they act similarly, just not in the programmers model)")
 
 
 ;; macros to allow projects to declare registers. Currently these set
-;; up variables of use during simulation but eventually should
+;; up variables of use during simulation but eventually could
 ;; generate appropriate HDL as well.
 
 (define-property-accessor register-alias :register-alias)
@@ -149,6 +151,9 @@ since they act similarly, just not in the programmers model)")
 
 (defmacro defchip-reg (name &optional original)
   "Used to create initial definion of register and an alias if needed."
+  ;; aliased registers are used in scheme-79 to support GC without expanding the
+  ;; number of registers. We might want to make that a project-specific
+  ;; extension if it's not used in, say, scheme-84. (TBD)
   `(cl:progn ,@(cl:cond
                  (original
                   `((defvar ,name ,original)
@@ -188,6 +193,11 @@ since they act similarly, just not in the programmers model)")
 (define-property-accessor sense-wire-name :sense-wire-name)
 (define-property-accessor sense-wire-register :sense-wire-register) ; register associated with this sense wire
 (define-property-accessor sense-wire-encoding :sense-wire-encoding)
+
+(defun get-sense-wire-encoding (sense-wire)
+  (let ((result (sense-wire-encoding sense-wire)))
+    (assert result (sense-wire) "Sense wire has no encoding") ; doing it this way to catch bugs
+    result))
 
 ;; for simulation, at least, here is code for setting and clearing the control wires
 ;; we have separate from and to control
