@@ -2,7 +2,7 @@
 --                                               --
 -- Temporary "library" to develop register code  --
 --                                               --
--- Time-stamp: <2022-04-26 14:46:26 gorbag>      --
+-- Time-stamp: <2022-04-28 13:19:13 gorbag>      --
 --                                               --
 -- ------------------------------------------------
 
@@ -194,8 +194,8 @@ package body regpkg is
     wait until falling_edge(clk1);
     Control1 <= '0';
     Control2 <= '0';
-    Control3 <= '1';
-  end procedure SetControls;
+    Control3 <= '0';
+  end procedure SetControls3;
   
 end package body regpkg;
   

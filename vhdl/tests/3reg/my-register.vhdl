@@ -2,7 +2,7 @@
 --                                               --
 -- Temporary registers to develop register code  --
 --                                               --
--- Time-stamp: <2022-04-26 14:29:26 gorbag>      --
+-- Time-stamp: <2022-04-28 14:26:36 gorbag>      --
 --                                               --
 -- ------------------------------------------------
 
@@ -39,7 +39,10 @@ architecture register_arch of my_register is
 begin
   Register_Input_Control_Proc : process(clk1)
   begin
-    if ((rst = '0') and rising_edge(clk1)) then
+    -- since FROM happens on rising edge of clk1, we need to wait for the bus
+    -- to stablize before we copy TO. So let's do it on the falling edge of
+    -- clk1 since clk2 is for setting the sense bits
+    if ((rst = '0') and falling_edge(clk1)) then
       if (controls.rc_to = '1') then
         register_local_state <= ibus.bus_data;
       else
@@ -58,15 +61,18 @@ begin
           register_local_state.frame <= ibus.bus_data.frame;
         end if;
       end if; -- controls.rc_to
-    end if; -- rising_edge(clk1)
+    end if; -- falling_edge(clk1)
   end process Register_Input_Control_Proc;
 
-  Register_Output_Control_Proc: process(clk1)
+  Register_Output_Control_Proc: process(clk1, clk2)
+    variable im_driving : std_logic := '0';
+
   begin
     -- if (rst = '1') then
       -- ibus <= io_bus_ignore; -- default input
     if ((rst = '0') and rising_edge(clk1)) then
       if (controls.rc_from = '1') then
+        im_driving := '1';
         ibus.bus_data.type_rest <= register_local_state.type_rest;
         ibus.bus_data.displacement <= register_local_state.displacement;
         ibus.bus_data.frame <= register_local_state.frame;
@@ -92,6 +98,7 @@ begin
       else -- we ignore other controls if we had a RC_FROM
         
         if (controls.rc_from_decremented = '1') then
+          im_driving := '1';    
           if (register_local_state.frame = x"000") then
             ibus.bus_data.displacement <= register_local_state.displacement - 1;
             ibus.bus_data.frame <= x"fff";
@@ -100,6 +107,7 @@ begin
             ibus.bus_data.frame <= register_local_state.frame - 1;
           end if;
         elsif (controls.rc_from_incremented = '1') then
+          im_driving := '1';
           if (register_local_state.frame = x"fff") then
             ibus.bus_data.displacement <= register_local_state.displacement + 1;
             ibus.bus_data.frame <= x"000";
@@ -109,9 +117,11 @@ begin
           end if;
         else
           if (controls.rc_from_decremented_frame = '1') then
+            im_driving := '1';
             ibus.bus_data.frame <= register_local_state.frame - 1;
           end if;
           if (controls.rc_from_decremented_displacement = '1') then
+            im_driving := '1';
             ibus.bus_data.displacement <= register_local_state.displacement - 1;
           end if;
         end if; -- controls.rc_from_decremented
@@ -120,6 +130,7 @@ begin
         -- hack but that's how we wrote the microcode - for now anyway. Later
         -- may just want to mux with the microPC (TBD)
         if (controls.rc_from_type = '1') then
+          im_driving := '1';
           ibus.bus_data.frame(11 downto 7) <= "00000";
           ibus.bus_data.frame(6) <= register_local_state.not_pointer_bit;
           ibus.bus_data.frame(5 downto 0) <= unsigned(register_local_state.type_rest);
@@ -134,9 +145,16 @@ begin
           (controls.rc_from_decremented_frame = '0') and
           (controls.rc_from_decremented_displacement = '0') and
           (controls.rc_from_type = '0')) then
+        im_driving := '0';
         ibus <= io_bus_ignore;
       end if;
     end if; -- rising_edge(clk1)
+
+    -- stop driving when clk2 ends (we will have set any senses)
+    if (falling_edge(clk2) and (im_driving = '1')) then
+      ibus.bus_data <= s79_word_ignore;
+      im_driving := '0';
+    end if;
   end process Register_Output_Control_Proc;
     
   Register_Sense_Proc : process(clk2, rst)

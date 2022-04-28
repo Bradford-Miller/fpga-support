@@ -2,7 +2,7 @@
 --                                               --
 -- Temporary registers to develop register code  --
 --                                               --
--- Time-stamp: <2022-04-26 14:58:53 gorbag>      --
+-- Time-stamp: <2022-04-28 13:18:37 gorbag>      --
 --                                               --
 --   This is the three register version of the   --
 --                   Testbench!                  --
@@ -25,7 +25,7 @@ use work.regpkg.all; -- temporary register types
 entity tb_register_3 is
 end entity tb_register_3;
     
--- it should be enough to run this for 22 ticks (220 ns) (last command is tick 21)
+-- it should be enough to run this for 24 ticks (240 ns) (last command is tick 21)
 architecture behav_reg_3 of tb_register_3 is
   component my_register
     generic (
@@ -272,11 +272,14 @@ begin
       ibus.bus_data.not_pointer_bit <= '1';
       ibus.bus_data.mark_bit <= '0';
       SetControl(r2controls.rc_to, clk1);
-
+      
       wait until falling_edge(clk2); -- tick 15
-      SetControls3(r2controls.rc_from, r1controls.rc_to, ibus.bus_controls.bc_set_mark, clk1);
+      ibus <= io_bus_dont_drive;
+      
+      SetControls3(ibus.bus_controls.bc_set_mark, r2controls.rc_from, r1controls.rc_to, clk1);
 
       -- deactivate this process (need to go study the signal diagram!)
+      wait until falling_edge(clk2); -- tick 16
       wait on rst;
     end process Register_Test;
-end architecture behav_reg_1;
+end architecture behav_reg_3;
