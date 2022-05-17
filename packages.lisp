@@ -1,10 +1,12 @@
 (in-package :cl-user)
 (defvar *fpga-support-version-reporter-initializations* nil)
 
-(cl-lib:detailed-version-reporter "FPGA Dev Support packages" 0 2 3
-                                  "Time-stamp: <2022-04-12 18:01:35 gorbag>"
-                                  "add make-pad to common"
+(cl-lib:detailed-version-reporter "FPGA Dev Support packages" 0 2 4
+                                  "Time-stamp: <2022-05-02 16:41:53 gorbag>"
+                                  "defchip-bus"
                                   :initialization-list-symbol *fpga-support-version-reporter-initializations*)
+
+;; 0.2.4   5/ 2/22 add defchip-bus
 
 ;; 0.2.3   3/24/22 make-pad in common
 
@@ -371,6 +373,9 @@
    #:get-sense-wire-encoding
 
    #:set-control-wire-fn
+
+   ;; bus definitions
+   #:defchip-bus
    ))
 
 (defpackage :fpga-pads

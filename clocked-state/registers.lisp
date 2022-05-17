@@ -1,8 +1,11 @@
 (in-package :fpga-registers)
 
-(fpga-support-version-reporter "FPGA Register Support" 0 2 1
-                               "Time-stamp: <2022-04-12 18:25:14 gorbag>"
-                               "move get-sense-wire-encoding here from machine-predefs")
+(fpga-support-version-reporter "FPGA Register Support" 0 2 2
+                               "Time-stamp: <2022-05-02 16:40:46 gorbag>"
+                               "add defchip-bus")
+
+;; 0.2.2   5/ 2/22 create defchip-bus macro; currently same as defchip-reg but
+;;                    will diverge as we build out VHDL generation capabilities
 
 ;; 0.2.1   4/12/22 moved get-sense-wire-encoding here from machine-predefs
 
@@ -179,6 +182,12 @@ since they act similarly, just not in the programmers model)")
              (setf (register-refs ',name) 0)
              (eval-when (:compile-toplevel :load-toplevel :execute)
                (export-ulisp-symbol ',name))))
+
+(defmacro defchip-bus (name)
+  "similar to defchip-reg (for lisp simulation purposes) but will diverge as we
+build out VHDL support"
+  `(defchip-reg ,name))
+
 
 (defun register-p (symbol)
   (and (symbolp symbol)

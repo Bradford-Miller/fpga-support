@@ -2,7 +2,7 @@
 --                                               --
 -- Temporary registers to develop register code  --
 --                                               --
--- Time-stamp: <2022-04-28 13:18:37 gorbag>      --
+-- Time-stamp: <2022-05-11 11:57:02 gorbag>      --
 --                                               --
 --   This is the three register version of the   --
 --                   Testbench!                  --
@@ -36,7 +36,7 @@ architecture behav_reg_3 of tb_register_3 is
       clk1     : in    std_logic;
       clk2     : in    std_logic;     -- two phase clock
       rst      : in    std_logic;
-      ibus      : inout io_bus;            -- Currently support single bus
+      ibus     : inout io_bus;            -- Currently support single bus
       controls : in    register_controls := register_controls_init;
       senses   : out   register_senses);
   end component my_register;
@@ -50,7 +50,7 @@ architecture behav_reg_3 of tb_register_3 is
       clk1     : in    std_logic;
       clk2     : in    std_logic;     -- two phase clock
       rst      : in    std_logic;
-      ibus      : inout io_bus);            -- Currently support single bus
+      ibus     : inout io_bus);            -- Currently support single bus
   end component bus_master;
 
   -- MUT inputs

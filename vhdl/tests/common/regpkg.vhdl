@@ -2,7 +2,7 @@
 --                                               --
 -- Temporary "library" to develop register code  --
 --                                               --
--- Time-stamp: <2022-04-26 13:39:32 gorbag>      --
+-- Time-stamp: <2022-05-10 17:25:54 gorbag>      --
 --                                               --
 -- ------------------------------------------------
 
@@ -80,7 +80,9 @@ package regpkg is
                                           type_rest => (others => 'Z'),
                                           displacement => (others => 'Z'),
                                           frame => (others => 'Z'));
-                                          
+
+  function to_string ( a: s79_word) return string;
+    
   type io_bus is record
     bus_data        : s79_word;
     bus_controls    : io_bus_controls;
@@ -141,7 +143,18 @@ package regpkg is
                                                       eq_bus => '0');
 
   procedure SetControl (
-    signal Control : inout std_logic;
+    signal Control : out std_logic;
+    signal clk1 : in std_logic);
+
+  procedure SetControls (
+    signal Control1 : out std_logic;
+    signal Control2 : out std_logic;
+    signal clk1 : in std_logic);
+
+  procedure SetControls3 (
+    signal Control1 : out std_logic;
+    signal Control2 : out std_logic;
+    signal Control3 : out std_logic;
     signal clk1 : in std_logic);
           
 end package regpkg;
@@ -150,13 +163,50 @@ package body regpkg is
   -- expect this to be called on a single control signal during
   -- falling_edge(clk2) (for now). Note that there should be only one "process"
   -- that is creating control calls so we can drive 0 (instead of Z) otherwise.
-  procedure SetControl(signal Control : inout std_logic;
+  procedure SetControl(signal Control : out std_logic;
                        signal clk1 : in std_logic) is
   begin
     Control <= '1';
     wait until falling_edge(clk1);
     Control <= '0';
   end procedure SetControl;
-    
+
+  -- setting two controls (from/to) is pretty common so that's what SetControls
+  -- does.
+  procedure SetControls(signal Control1 : out std_logic;
+                        signal Control2 : out std_logic;
+                        signal clk1 : in std_logic) is
+  begin
+    Control1 <= '1';
+    Control2 <= '1';
+    wait until falling_edge(clk1);
+    Control1 <= '0';
+    Control2 <= '0';
+  end procedure SetControls;
+
+  -- probably only used when we are also setting a bus control
+  procedure SetControls3(signal Control1 : out std_logic;
+                         signal Control2 : out std_logic;
+                         signal Control3 : out std_logic;
+                         signal clk1 : in std_logic) is
+  begin
+    Control1 <= '1';
+    Control2 <= '1';
+    Control3 <= '1';
+    wait until falling_edge(clk1);
+    Control1 <= '0';
+    Control2 <= '0';
+    Control3 <= '0';
+  end procedure SetControls3;
+
+  function to_string(a: s79_word) return string is
+  begin
+    return to_string(a.mark_bit) &
+      to_string(a.not_pointer_bit) &
+      to_string(a.type_rest) &
+      to_string(a.displacement) &
+      to_string(a.frame);
+  end function;
+      
 end package body regpkg;
   
