@@ -29,7 +29,7 @@ init: force
 	# /usr/local/lib/ghdl/ieee/v08/../../src/ieee2008/numeric_std-body.vhdl
 	$(GHDL) -a $(GHDLFLAGS) ../common/regpkg.vhdl
 	$(GHDL) -a $(GHDLFLAGS) reg-test.vhdl
-	$(GHDL) -a $(GHDLFLAGS) ../common/my-bus.vhdl
+	$(GHDL) -a $(GHDLFLAGS) ../common/my-bus2.vhdl
 	$(GHDL) -a $(GHDLFLAGS) ../common/my-register.vhdl
 
 force:

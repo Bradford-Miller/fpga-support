@@ -1,6 +1,6 @@
 # Common Lisp support for defining FPGA structures, simulation support code and firmware compilation
 
-Time-stamp: <2022-04-04 12:03:58 gorbag>
+Time-stamp: <2022-06-02 14:38:00 Bradford W. Miller(on Boromir)>
 
 After some initial work on simulating the Scheme-79 chip (see the project
 files), code that could be reused for other such FPGA projects is being
@@ -102,9 +102,17 @@ be suitable for such use!)
 Note the TODO.txt file documents specific tasks that are planned (in
 some sense ;-) or previous TODO items that have been completed.
 
+#### 6-2-22 BWM
+
+I've been hand-building some VHDL code for a simplified version of the
+registers, internal bus, external pads, and PLAs to make it clearer (to me ;-)
+what kind of code the declaratory functions (e.g. defining registers and other
+parts of the processor) should be creating. These appear under the VHDL
+directory and further information is available in the README there.
+
 #### 3-18-22 BWM
 
-test-3 now runs in the s79-simulator directory, so I'm incrementing the
+test-2 now runs in the s79-simulator directory, so I'm incrementing the
 minor release version to 0.2. The next milestone will be to produce FPGA
 code so expect a lot of changes to this library!
 

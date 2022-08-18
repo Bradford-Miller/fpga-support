@@ -2,13 +2,14 @@
 --                                               --
 -- Temporary registers to develop register code  --
 --                                               --
--- Time-stamp: <2022-05-17 11:43:44 gorbag>      --
+-- Time-stamp: <2022-08-18 12:34:40 Bradford W. Miller(on Boromir)>      --
 --                                               --
 --       This is the pad timing test of the      --
 --                   Testbench!                  --
 --                                               --
 -- ------------------------------------------------
 
+use std.env.all;
     
 library ieee;
 use ieee.std_logic_1164.all;
@@ -17,6 +18,7 @@ use ieee.numeric_std.all;
 -- library work;
 -- need regpkg for bus defns
 use work.regpkg.all; -- temporary register types
+use work.padpkg.all;
 
       
 -- put together a testbed to exercise the pads
@@ -33,7 +35,7 @@ end entity tb_pads_1;
 -- it should be enough to run this for 18 ticks 180 ns (last command is tick
 -- 16) 
 architecture behav_pads_1 of tb_pads_1 is
-  component bus_master
+  component bus_master6
     generic (
       Simulation_on : boolean := false; -- not currently using, but 'just in case'
       Word_width    : integer := 32); -- ideally we'd pass this to io_bus or get
@@ -41,9 +43,21 @@ architecture behav_pads_1 of tb_pads_1 is
     port (
       clk1     : in    std_logic;
       clk2     : in    std_logic;     -- two phase clock
+      clk1a    : in    std_logic;
+      clk2a    : in    std_logic;
       rst      : in    std_logic;
-      ibus      : inout io_bus);            -- Currently support single bus
-  end component bus_master;
+
+      my_pad_controls       : in     pad_controls;
+      pads_memory_bus       : inout  s79_word; 
+
+      obus     : out   input_bus;
+      ibus1    : in    output_bus;
+      ibus2    : in    output_bus;
+      ibus3    : in    output_bus;
+      ibus4    : in    output_bus;
+      ibus5    : in    output_bus;
+      ibus6    : in    output_bus);
+  end component bus_master6;
 
   component my_register
     generic (
@@ -54,8 +68,14 @@ architecture behav_pads_1 of tb_pads_1 is
       clk1     : in    std_logic;
       clk2     : in    std_logic;     -- two phase clock
       rst      : in    std_logic;
-      ibus     : inout io_bus;            -- Currently support single bus
-      controls : in    register_controls;
+
+      name     : in    string(1 to 10);
+      tick     : in    unsigned(11 downto 0);
+
+      ibus     : in    input_bus;
+      obus     : out   output_bus;
+  
+      controls : in    register_controls := register_controls_init;
       senses   : out   register_senses);
   end component my_register;
 
@@ -72,15 +92,7 @@ architecture behav_pads_1 of tb_pads_1 is
       clk2a                 : in     std_logic;
       rst                   : in     std_logic;
 
-      set_ale               : in     std_logic;
-      set_read              : in     std_logic;
-      set_write             : in     std_logic;
-      set_cdr               : in     std_logic;
-      set_read_interrupt    : in     std_logic;
-      set_gc_needed         : in     std_logic;
-      clear_gc_needed       : in     std_logic; -- latched
-      set_memory_pads       : in     std_logic;
-      get_memory_pads       : in     std_logic;
+      my_pad_controls       : in     pad_controls; -- defined in padpkg.vhdl
 
       -- outputs to FPGA logic
       freeze_p              : out    std_logic;
@@ -107,19 +119,16 @@ architecture behav_pads_1 of tb_pads_1 is
       pad_interrupt_request : in     std_logic;
 
       -- IO to/from board (or other FPGA logic)
-      pads_memory_bus       : inout  s79_word;
-      ibus                  : inout  io_bus;
 
-      -- pseudo pads (signals); not sure I should treat these as "ports" yet
-      -- conditional
-      set_conditional       : in     std_logic;
+      -- should be external to the FPGA but maybe not really...  (we could
+      -- use the DDR3 driver, in which case inout would not be
+      -- supported). One option would be to encapulate this chip_master or
+      -- some other lower level entity that provides the inout semantic if
+      -- need be...
+      -- pads_memory_bus       : inout  s79_word; 
+
       conditional_p         : out    std_logic;
-      -- run_nano
-      set_run_nano          : in     std_logic; -- like internal version of freeze
       run_nano_p            : out    std_logic;
-      -- mask_interrupt
-      set_mask_interrupt    : in     std_logic;
-      clear_mask_interrupt  : in     std_logic;
       mask_interrupt_p      : out    std_logic);
   end component chip_master;
 
@@ -138,18 +147,16 @@ architecture behav_pads_1 of tb_pads_1 is
   signal reg_address_controls : register_controls := register_controls_init;
   signal reg_address_senses   : register_senses;
 
-  signal ibus : io_bus := io_bus_dont_drive;
+  signal ibus : input_bus;
+  signal obus1 : output_bus; -- from acc1
+  signal obus2 : output_bus; -- from acc2
+  signal obus3 : output_bus; -- memory
+  signal obus4 : output_bus; -- address
+  signal obus5 : output_bus := output_bus_init; -- pads (no longer used)
+  signal obusme : output_bus; -- test input
 
   -- pad control inputs
-  signal set_ale   : std_logic := '0';
-  signal set_read  : std_logic := '0';
-  signal set_write : std_logic := '0';
-  signal set_cdr   : std_logic := '0';
-  signal set_read_interrupt : std_logic := '0';
-  signal set_gc_needed      : std_logic := '0';
-  signal clear_gc_needed    : std_logic := '0';
-  signal set_memory_pads    : std_logic := '0';
-  signal get_memory_pads    : std_logic := '0';
+  signal my_pad_controls : pad_controls := pad_controls_init;
 
   -- pad control outputs
   signal freeze_p     : std_logic;
@@ -176,35 +183,52 @@ architecture behav_pads_1 of tb_pads_1 is
   signal pad_read_interrupt : std_logic;
   signal pad_gc_needed      : std_logic;
 
-  -- pseudo pads (signals internal to chip)
-  signal set_conditional      : std_logic := '0';
-  signal set_run_nano         : std_logic := '0';
-  signal set_mask_interrupt   : std_logic := '0';
-  signal clear_mask_interrupt : std_logic := '0';
+  -- pseudo pads (internal signals)
   signal conditional_p        : std_logic;
   signal run_nano_p           : std_logic;
   signal mask_interrupt_p     : std_logic;
-  
+
+
   -- clock
   constant MASTER_PERIOD  : time                  := 1250 ps; -- really a quarter period
   signal master_clk       : std_logic             := '0'; 
   signal tick             : unsigned(11 downto 0) := X"000"; -- count the ticks to aid debugging
   signal master_clk_count : unsigned(2 downto 0)  := "000"; -- just for division
+
+  signal acc1name : string(1 to 10) := "Acc1      ";
+  signal acc2name : string(1 to 10) := "Acc2      ";
+  signal memregname : string(1 to 10) := "Memory    ";
+  signal addregname : string(1 to 10) := "Address   ";
   
 begin
-  My_Bus : bus_master
+  My_Bus : bus_master6
     port map (
       clk1 => clk1,
       clk2 => clk2,
+      clk1a => clk1a,
+      clk2a => clk2a,
       rst => rst,
-      ibus => ibus);
+
+      my_pad_controls       => my_pad_controls,
+      pads_memory_bus       => pads_memory_bus,
+
+      ibus1 => obus1,
+      ibus2 => obus2,
+      ibus3 => obus3,
+      ibus4 => obus4,
+      ibus5 => obus5, -- no longer used in this test!
+      ibus6 => obusme,
+      obus => ibus);
 
   ACC_1 : my_register
     port map (
       clk1 => clk1,
       clk2 => clk2,
       rst => rst,
+      name => acc1name,
+      tick => tick,
       ibus => ibus,
+      obus => obus1,
       controls => acc1_controls,
       senses => acc1_senses);
 
@@ -213,7 +237,10 @@ begin
       clk1 => clk1,
       clk2 => clk2,
       rst => rst,
+      name => acc2name,
+      tick => tick,
       ibus => ibus,
+      obus => obus2,
       controls => acc2_controls,
       senses => acc2_senses);
 
@@ -222,7 +249,10 @@ begin
       clk1 => clk1,
       clk2 => clk2,
       rst => rst,
+      name => memregname,
+      tick => tick,
       ibus => ibus,
+      obus => obus3,
       controls => reg_memory_controls,
       senses => reg_memory_senses);
   
@@ -231,7 +261,10 @@ begin
       clk1 => clk1,
       clk2 => clk2,
       rst => rst,
+      name => addregname,
+      tick => tick,
       ibus => ibus,
+      obus => obus4,
       controls => reg_address_controls,
       senses => reg_address_senses);
 
@@ -243,15 +276,7 @@ begin
       clk2a => clk2a,
       rst => rst,
 
-      set_ale               => set_ale,
-      set_read              => set_read,
-      set_write             => set_write,
-      set_cdr               => set_cdr,
-      set_read_interrupt    => set_read_interrupt,
-      set_gc_needed         => set_gc_needed,
-      clear_gc_needed       => clear_gc_needed,
-      set_memory_pads       => set_memory_pads,
-      get_memory_pads       => get_memory_pads,
+      my_pad_controls       => my_pad_controls,
 
       -- outputs to FPGA logic
       freeze_p              => freeze_p,
@@ -277,20 +302,9 @@ begin
       pad_reset             => pad_reset,
       pad_interrupt_request => pad_interrupt_request,
 
-      -- IO to/from board (or other FPGA logic)
-      pads_memory_bus       => pads_memory_bus,
-      ibus                  => ibus,
-
-      -- pseudo pads (signals); not sure I should treat these as "ports" yet
-      -- conditional
-      set_conditional       => set_conditional,
+      -- pseudo pads (signals)
       conditional_p         => conditional_p,
-      -- run_nano
-      set_run_nano          => set_run_nano,
       run_nano_p            => run_nano_p,
-      -- mask_interrupt
-      set_mask_interrupt    => set_mask_interrupt,
-      clear_mask_interrupt  => clear_mask_interrupt,
       mask_interrupt_p      => mask_interrupt_p);
 
   ------------------
@@ -371,20 +385,7 @@ begin
     -- allow pad to reset!
     wait on reset_p;
   end process Reset_Gen;
-  ----------------------
-  -- clear prior command
-  ----------------------
 
-  Command_Clear : process
-  begin
-    loop
-      wait until falling_edge(clk1);
-      -- this should be the only process running the controls, and they should
-      -- be cleared by SetControl
-      ibus.bus_data <= s79_word_ignore; -- stop driving (if we are)
-    end loop;
-  end process Command_Clear;
-  
   ------------------
   -- Test generator
   ------------------
@@ -399,12 +400,15 @@ begin
   --
   -- note we don't have an actual microcontrol or nanocontrol but will simulate
   -- it here.
+
+  -- this tries to work out the "lead time" needed for placing signals on the
+  -- bus or controls to get the "right" (per the AIM) timing for memory
+  -- read/write on the "external" bus (ipads_memory_bus).
   
   Pad_Test : process
   begin
-    if ((rst = '1') and falling_edge(clk1)) then
-      ibus.bus_controls <= io_bus_controls_init;
-    end if;
+    wait until ((rst = '1') and falling_edge(clk1));
+    obusme <= output_bus_init;
         
     wait until falling_edge(rst); -- end of clk2 tick 3
     
@@ -414,119 +418,99 @@ begin
     wait until falling_edge(clk2); -- a tick later tick 4
     -- wait a tick to see if we detect address_eq_zero, etc.
     -- load the tick into acc1 and acc2
-    ibus.bus_data.frame <= tick;
-    ibus.bus_data.displacement <= tick;
-    ibus.bus_data.type_rest <= "000000";
-    ibus.bus_data.not_pointer_bit <= '0';
-    ibus.bus_data.mark_bit <= '0';
+    obusme.output_bus_data.frame <= tick;
+    obusme.output_bus_data.displacement <= tick;
+    obusme.output_bus_data.type_rest <= "000000";
+    obusme.output_bus_data.not_pointer_bit <= '0';
+    obusme.output_bus_data.mark_bit <= '0';
     SetControl(acc1_controls.rc_to, clk1);
     
     wait until falling_edge(clk2); -- a tick later tick 5
     -- load the tick
-    ibus.bus_data.frame <= tick;        
-    ibus.bus_data.displacement <= tick;
+    obusme.output_bus_data.frame <= tick;        
+    obusme.output_bus_data.displacement <= tick;
     SetControl(acc2_controls.rc_to, clk1);
 
     -- wait until falling_edge(clk1); -- tick 6 -- setcontrol already waited to
     -- this point!
-    set_run_nano <= '1';
-    set_ale <= '1';
-    set_memory_pads <= '1';
-    ibus <= io_bus_dont_drive; -- stop driving, let the registers do it.
-    
-    wait until falling_edge(clk2); -- tick 6
+    my_pad_controls.set_run_nano <= '1';
+    my_pad_controls.set_ale <= '1';
+    my_pad_controls.set_memory_pads <= '1';
     -- simulate a WRITE cycle from address in acc1 of content in acc2
-    -- this is probably wrong but we'll figure it out
     SetControls(reg_address_controls.rc_to, acc1_controls.rc_from, clk1);
 
     -- wait until falling_edge(clk1); -- tick 7
     -- now we can clear the ALE
-    set_ale <= '0';
-    set_write <= '1'; -- leave write high for two cycles
+    my_pad_controls.set_ale <= '0';
+    my_pad_controls.set_write <= '1'; -- leave write high for two cycles
+    SetControls3(reg_memory_controls.rc_to, obusme.bus_controls.bc_set_unmark, acc2_controls.rc_from, clk1);
     
-    wait until falling_edge(clk2); -- tick 7
-    SetControls3(reg_memory_controls.rc_to, ibus.bus_controls.bc_set_unmark, acc2_controls.rc_from, clk1);
-
     -- wait until falling_edge(clk1); -- tick 8
-    set_run_nano <= '0'; -- now clear it
-    set_cdr <= '1';
-    
-    wait until falling_edge(clk2); -- tick 8
+    my_pad_controls.set_run_nano <= '0'; -- now clear it (drops at end of ph2?)
+    my_pad_controls.clear_run_nano <= '1';
+    my_pad_controls.set_cdr <= '1'; -- sets with start of ph2
     -- now the same for the cdr
-    ibus.bus_controls.bc_set_unmark <= '1';
-    SetControls(reg_memory_controls.rc_to, acc1_controls.rc_from, clk1);
-    ibus.bus_controls.bc_set_unmark <= '0';
+    SetControls3(reg_memory_controls.rc_to, obusme.bus_controls.bc_set_unmark, acc1_controls.rc_from, clk1);
+
+    -- wait until falling_edge(clk2); -- tick 8
 
     -- wait until falling_edge(clk1); -- tick 9
-    set_write <= '0';
-    set_memory_pads <= '0';
-    set_cdr <= '0';
+    my_pad_controls.set_write <= '0';
+    my_pad_controls.set_memory_pads <= '0';
+    my_pad_controls.set_cdr <= '0';
+    my_pad_controls.clear_run_nano <= '0';
     
     wait until falling_edge(clk2); -- tick 9
     -- clear the accumulators
-    ibus.bus_data.frame <= x"000";
-    ibus.bus_data.displacement <= x"000";
+    obusme.output_bus_data <= s79_word_init;
     SetControl(acc2_controls.rc_to, clk1);
 
     -- wait until falling_edge(clk1); -- tick A
-    set_run_nano <= '1';
-    ibus <= io_bus_dont_drive; -- stop driving, let the registers do it.    
-    set_ale <= '1';
-    set_memory_pads <= '1';
-
+    my_pad_controls.set_run_nano <= '1';
+    my_pad_controls.set_ale <= '1';
+    my_pad_controls.set_memory_pads <= '1';
+    
     wait until falling_edge(clk2); -- tick A
-    -- now read the cdr
-    SetControls(reg_address_controls.rc_to, acc1_controls.rc_from, clk1);
-    ibus.bus_data <= s79_word_ignore;
+    -- now read the cdr, address should be 0x4
+    SetControls(reg_address_controls.rc_to, acc1_controls.rc_from, clk1); --
+    -- ***** obus right but memory bus wrong? 
+    -- obusme <= output_bus_init;
 
     -- wait until falling_edge(clk1); -- tick B
-    set_ale <= '0';
-    set_memory_pads <= '0';
-    set_cdr <= '1';
-    set_run_nano <= '0';
-    set_read <= '1';
-    get_memory_pads <= '1';
+    my_pad_controls.set_ale <= '0';
+    my_pad_controls.set_memory_pads <= '0';
+    my_pad_controls.set_cdr <= '1';
+    my_pad_controls.set_run_nano <= '0';
+    my_pad_controls.set_read <= '1';
+    my_pad_controls.get_memory_pads <= '1';
     
     wait until falling_edge(clk2); -- tick B
     SetControls(reg_memory_controls.rc_to, acc2_controls.rc_to, clk1);
+    -- ***** all seems right.
 
     -- wait until falling_edge(clk1); -- tick C
-    set_cdr <= '0';
-    set_read <= '0';
-    get_memory_pads <= '0';
-    
-    wait until falling_edge(clk2); -- tick C
+    my_pad_controls.set_cdr <= '0';
+    my_pad_controls.set_read <= '0';
+    my_pad_controls.get_memory_pads <= '0';
     
     wait until falling_edge(clk1); -- tick D
-    set_gc_needed <= '1';
-    set_read_interrupt <= '1';
-    get_memory_pads <= '1';
-    
-    wait until falling_edge(clk2); -- tick D
+    my_pad_controls.set_gc_needed <= '1';
+    my_pad_controls.set_read_interrupt <= '1';
+    my_pad_controls.get_memory_pads <= '1';
     
     wait until falling_edge(clk1); -- tick E
-    set_gc_needed <= '0';
-    set_read_interrupt <= '0';
-    get_memory_pads <= '0';
-    clear_gc_needed <= '1';
-
-    wait until falling_edge(clk2); -- tick E
+    my_pad_controls.set_gc_needed <= '0';
+    my_pad_controls.set_read_interrupt <= '0';
+    my_pad_controls.get_memory_pads <= '0';
+    my_pad_controls.clear_gc_needed <= '1';
     
     wait until falling_edge(clk1); -- tick F
-    clear_gc_needed <= '0';
-
-    wait until falling_edge(clk2); -- tick F
+    my_pad_controls.clear_gc_needed <= '0';
     
-    wait until falling_edge(clk2); -- tick 10
-    
-    wait until falling_edge(clk2); -- tick 11
-    
-    wait until falling_edge(clk2); -- tick 12
-    
-    wait until falling_edge(clk2); -- tick 13
+    wait until falling_edge(clk1); -- tick 10
     
     -- deactivate this process (need to go study the signal diagram!)
-    wait until falling_edge(clk2); -- tick 14
+    finish;
     wait on rst;
   end process Pad_Test;
   

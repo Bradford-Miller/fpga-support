@@ -6,7 +6,9 @@
 GHDL=ghdl
 GHDLFLAGS= --std=08
 # modified to generate a wave file BWM
-GHDLRUNFLAGS= --stop-time=240ns --wave=behav-reg-3.GHW
+#--stop-time=340ns  should be 16 (hex) ticks at 20ns per tick or 440ns.
+# using "finish" under std08 so stop time not needed!
+GHDLRUNFLAGS= --wave=behav-reg-3.GHW
 
 # Default target : elaborate
 all : elab
@@ -29,7 +31,7 @@ init: force
 	# /usr/local/lib/ghdl/ieee/v08/../../src/ieee2008/numeric_std-body.vhdl
 	$(GHDL) -a $(GHDLFLAGS) ../common/regpkg.vhdl
 	$(GHDL) -a $(GHDLFLAGS) reg-test.vhdl
-	$(GHDL) -a $(GHDLFLAGS) ../common/my-bus.vhdl
+	$(GHDL) -a $(GHDLFLAGS) ../common/my-bus4.vhdl
 	$(GHDL) -a $(GHDLFLAGS) ../common/my-register.vhdl
 
 force:

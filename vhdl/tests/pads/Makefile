@@ -7,7 +7,8 @@ GHDL=ghdl
 GHDLFLAGS= --std=08
 #GHDLRUNFLAGS=
 # modified to generate a wave file BWM
-GHDLRUNFLAGS= --stop-time=180ns --wave=behav-pads-1.GHW
+# --stop-time=180ns  using 'finish'
+GHDLRUNFLAGS= --wave=behav-pads-1.GHW
 
 # Default target : elaborate
 all : elab
@@ -29,10 +30,10 @@ init: force
 	# /usr/local/lib/ghdl/ieee/v08/../../src/ieee2008/numeric_std.vhdl
 	# /usr/local/lib/ghdl/ieee/v08/../../src/ieee2008/numeric_std-body.vhdl
 	$(GHDL) -a $(GHDLFLAGS) ../common/regpkg.vhdl
-	$(GHDL) -a $(GHDLFLAGS) my-pads.vhdl
-	$(GHDL) -a $(GHDLFLAGS) ../common/my-bus.vhdl
+	$(GHDL) -a $(GHDLFLAGS) ../common/padpkg.vhdl
+	$(GHDL) -a $(GHDLFLAGS) ../common/my-pads.vhdl
+	$(GHDL) -a $(GHDLFLAGS) ../common/my-bus6.vhdl
 	$(GHDL) -a $(GHDLFLAGS) ../common/my-register.vhdl
-	$(GHDL) -a $(GHDLFLAGS) padpkg.vhdl
 	$(GHDL) -a $(GHDLFLAGS) pad-test.vhdl
 
 force:

@@ -1,10 +1,10 @@
--- ------------------------------------------------
---                                               --
--- Temporary pads (signals) to develop pad code  --
---                                               --
--- Time-stamp: <2022-05-17 12:16:20 gorbag>      --
---                                               --
--- ------------------------------------------------
+-- --------------------------------------------------------------------
+--                                                                   --
+-- Temporary pad support to help develop pad code                    --
+--                                                                   --
+-- Time-stamp: <2022-08-18 12:32:10 Bradford W. Miller(on Boromir)>  --
+--                                                                   --
+-- --------------------------------------------------------------------
 
 -- Note that VHDL doesn't deal with assigning signals to actual IO pads on the
 -- FPGA, and we'll have to use (vendor) tools for that, or at least set up
@@ -68,15 +68,7 @@ entity chip_master is
     clk2a                 : in     std_logic;
     rst                   : in     std_logic;
 
-    set_ale               : in     std_logic;
-    set_read              : in     std_logic;
-    set_write             : in     std_logic;
-    set_cdr               : in     std_logic;
-    set_read_interrupt    : in     std_logic;
-    set_gc_needed         : in     std_logic;
-    clear_gc_needed       : in     std_logic; -- latched
-    set_memory_pads       : in     std_logic;
-    get_memory_pads       : in     std_logic;
+    my_pad_controls       : in     pad_controls; -- defined in padpkg.vhdl
 
     -- outputs to FPGA logic
     freeze_p              : out    std_logic := '0';
@@ -103,19 +95,20 @@ entity chip_master is
     pad_interrupt_request : in     std_logic;
 
     -- IO to/from board (or other FPGA logic)
-    pads_memory_bus       : inout  s79_word := s79_word_ignore;
-    ibus                  : inout  io_bus; -- controlled by bus_master
+    -- note that pads_memory_bus, being an EXTERNAL bus (at least in the
+    -- original chip) really should be an inout.
 
-    -- pseudo pads (signals); not sure I should treat these as "ports" yet
-    -- conditional
-    set_conditional       : in     std_logic;
+    -- should be external to the FPGA but maybe not really...  (we could use
+    -- the DDR3 driver, in which case inout would not be supported). One
+    -- option would be to encapulate this chip_master or some other lower
+    -- level entity that provides the inout semantic if need be...
+
+    -- moved to mux driver code
+    -- pads_memory_bus       : inout  s79_word := s79_word_ignore; 
+
+    -- pseudo pads (internal signals);
     conditional_p         : out    std_logic := '0';
-  -- run_nano
-    set_run_nano          : in     std_logic; -- like internal version of freeze
     run_nano_p            : out    std_logic := '0';
-  -- mask_interrupt
-    set_mask_interrupt    : in     std_logic;
-    clear_mask_interrupt  : in     std_logic;
     mask_interrupt_p      : out    std_logic := '0');
 
 end entity chip_master;
@@ -124,12 +117,13 @@ architecture behav_chip_master of chip_master is
   -- local signals and variables
   signal gc_needed_latch  : std_logic := '0';
   signal mask_interrupt_latch : std_logic := '0';
+  signal run_nano_latch : std_logic := '0';
   
 begin
   -- output clocks (hopefully combinatoric) these are tied to our clock (clk1
 -- and clk2), which will be generated via "black box" on the fpga and through
--- the test bench on the VHDL simulation that means there's really nothing we
--- need to do here...
+-- the test bench on the VHDL simulation. That means there's really nothing
+-- we need to do here...
 
 -- (defchip-pad *ph1* :output :ph1-rising :any 2) ; input in original. 
 -- (defchip-pad *ph2* :output :ph2-rising :any 2) ; input in original. 
@@ -138,7 +132,7 @@ begin
   pad_ph2 <= clk2;
 
 -- we don't need to output the offset versions - those are internal only (at
--- this point, anyway)
+-- this point, anyway!)
 
 -- freeze; causes chip to inhibit any state change, it must be stable
 --   during ph1. Inhibits from-x and to-x controls in the register
@@ -258,20 +252,26 @@ begin
 -- into one pad process! (will need to update the PLA appropriately - but I
 -- think that's consistent with the original TR! (TBD))
 
+  -- NB: in the paper we show start of data assertion on rise of ph1 and end on
+  -- drop of ph1. What we want it so make sure it is valid on drop of ph1
+  -- (because good FPGA programming practices dictate that things should stay
+  -- valid on a clock change we are going to sample on) so we assert on rise of
+  -- clk1a (to allow the mux to run to get a valid input) and drop on fall of clk1a.
+
+  -- Bottom line, if we read on drop of clk1, the memory bus should be valid,
+  -- and if we assert data on rise of clk1 (for write) it will get there in
+  -- time. UNFORTUNATELY mux delays the signal by a half phase SO this code is
+  -- bing moved INTO the mux logic (to avoid the delay!)
+
+  /*
   Memory_Pads_Control_Proc: process(clk1, clk1a)
-    variable im_driving_ibus : std_logic := '0';
     variable im_driving_membus : std_logic := '0';
     
   begin
     if (rst = '1') then
-      null;
+      obus <= output_bus_init;
     elsif falling_edge(clk1a) then -- delay until falling edge of clk1a so we
                                    -- know it is valid during falling_ege(clk1)!
-      if (im_driving_ibus = '1') then
-        im_driving_ibus := '0';
-      end if;
-
-      ibus.bus_data <= s79_word_ignore;
 
       if (im_driving_membus = '1') then
         im_driving_membus := '0';
@@ -283,24 +283,23 @@ begin
                                   -- we have to wait until after that but
                                   -- before falling clk1, which is what clk1a
                                   -- is for!
-      if (set_memory_pads = '1') then
-        pads_memory_bus <= ibus.bus_data;
+      if (my_pad_controls.set_memory_pads = '1') then
+        pads_memory_bus <= ibus.shared_bus_data;
         im_driving_membus := '1';
       else
         pads_memory_bus <= s79_word_ignore;
       end if;
       
-      if (get_memory_pads = '1') then
-        ibus.bus_data <= pads_memory_bus;
-        im_driving_ibus := '1';
+      if (my_pad_controls.get_memory_pads = '1') then
+        obus.output_bus_data <= pads_memory_bus;
       else
-        ibus.bus_data <= s79_word_ignore;
+        obus.output_bus_data <= s79_word_init;
       end if;
       
     end if;
 
   end process Memory_Pads_Control_Proc;
-
+  */
 -- (defchip-pads *memory-pads* *word-size* :io
 --   *put-memory-content-onto-pads* *get-memory-content-from-pads* 1)
 
@@ -332,7 +331,7 @@ begin
   ALE_Pad_Control_Proc: process(clk2)
     begin
     if rising_edge(clk2) then
-      pad_ale <= set_ale;
+      pad_ale <= my_pad_controls.set_ale;
     end if;
   end process ALE_Pad_Control_Proc;
 
@@ -356,7 +355,7 @@ begin
   Read_Pad_Control_Proc: process(clk2)
     begin
     if rising_edge(clk2) then
-      pad_read <= set_read;
+      pad_read <= my_pad_controls.set_read;
     end if;
   end process Read_Pad_Control_Proc;
 
@@ -374,7 +373,7 @@ begin
   Write_Pad_Control_Proc: process(clk2)
     begin
     if rising_edge(clk2) then
-      pad_write <= set_write;
+      pad_write <= my_pad_controls.set_write;
     end if;
   end process Write_Pad_Control_Proc;
 
@@ -386,7 +385,7 @@ begin
   CDR_Pad_Control_Proc: process(clk2)
     begin
     if rising_edge(clk2) then
-      pad_cdr <= set_cdr;
+      pad_cdr <= my_pad_controls.set_cdr;
     end if;
   end process CDR_Pad_Control_Proc;
 
@@ -397,9 +396,9 @@ begin
 --              *run-external-data-transfer* 8) ; treat like a read
 
   Read_Interrupt_Control_Proc: process(clk2)
-    begin
+  begin
     if rising_edge(clk2) then
-      pad_read_interrupt <= set_read_interrupt;
+      pad_read_interrupt <= my_pad_controls.set_read_interrupt;
     end if;
   end process Read_Interrupt_Control_Proc;
 
@@ -416,11 +415,11 @@ begin
 
   GC_Needed_Control_Proc: process(clk1, clk1a, clk2, clk2a) -- sensitive to any
                                                             -- clock
-    begin
+  begin
     -- this should execute on any clock transition
-    if (set_gc_needed = '1') then
+    if (my_pad_controls.set_gc_needed = '1') then
       gc_needed_latch <= '1';
-    elsif (clear_gc_needed = '1') then
+    elsif (my_pad_controls.clear_gc_needed = '1') then
       gc_needed_latch <= '0';
     end if;
     
@@ -441,10 +440,10 @@ begin
 --(defchip-pad *conditional* :pseudo *run-nanocontroller-p1*
 --             *update-sense-wires* 7)
   Conditional_Control_Proc: process(clk2)
-    begin
+  begin
     if falling_edge(clk2) then -- delay to falling edge as bit set by nano on
                                -- rising edge
-      conditional_p <= set_conditional;
+      conditional_p <= my_pad_controls.set_conditional;
     end if;
   end process Conditional_Control_Proc;
   
@@ -456,9 +455,15 @@ begin
 -- (defchip-pad *run-nano* :latched-io *run-nanocontroller-p1* :any 8) ; full
 -- clock cycle as we may reassert
   Run_Nano_Control_Proc: process (clk2)
-    begin
+  begin
+    if (my_pad_controls.set_run_nano = '1') then
+      run_nano_latch <= '1';
+    elsif (my_pad_controls.clear_run_nano = '1') then
+      run_nano_latch <= '0';
+    end if;
+        
     if falling_edge(clk2) then
-      run_nano_p <= set_run_nano;
+      run_nano_p <= run_nano_latch;
     end if;
   end process Run_Nano_Control_Proc;
   
@@ -470,9 +475,9 @@ begin
 -- with *interrupt-request*
   Mask_Interrupt_Control_Proc: process (clk1, clk2)
     begin
-    if (set_mask_interrupt = '1') then
+    if (my_pad_controls.set_mask_interrupt = '1') then
       mask_interrupt_latch <= '1';
-    elsif (clear_mask_interrupt = '1') then
+    elsif (my_pad_controls.clear_mask_interrupt = '1') then
       mask_interrupt_latch <= '0';
     end if;
 

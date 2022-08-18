@@ -1,29 +1,66 @@
--- ------------------------------------------------
---                                               --
--- Temporary "library" to develop register code  --
---                                               --
--- Time-stamp: <2022-05-10 17:25:54 gorbag>      --
---                                               --
--- ------------------------------------------------
+-- --------------------------------------------------------------------
+--                                                                   --
+-- Temporary "library" to help develop register code                 --
+--                                                                   --
+-- Time-stamp: <2022-08-09 16:06:55 Bradford W. Miller(on Boromir)>  --
+--                                                                   --
+-- --------------------------------------------------------------------
 
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 package regpkg is
+  -- bit encoding of register field in nanocode (see machine-wires.lisp)
+  constant nrc_from_star_bit            : natural := 0; -- 0x0001
+  constant nrc_to_star_bit              : natural := 1; -- 0x0002
+  constant nrc_from_to_star_bit         : natural := 2; -- 0x0004
+  constant nrc_from_type_const_star_bit : natural := 3; -- 0x0008
+  constant nrc_from_const_star_bit      : natural := 4; -- 0x0010
+  constant nrc_from_star_type_bit       : natural := 5; -- 0x0020
+  -- these would be generated from the macros, we can add temporaries here
+
+  -- bus controls is also in register field? (maybe should be in pad field
+  -- since there's only one bus?)
+  constant nrc_set_mark_bit             : natural := 6; -- 0x0040
+  constant nrc_set_unmark_bit           : natural := 7; -- 0x0080
+  constant nrc_set_pointer_bit          : natural := 8; -- 0x0100
+  constant nrc_set_type_bit             : natural := 9; -- 0x0200
+
+  type ncode_register_controls is record
+    nrc_from_star               : std_logic;
+    nrc_to_star                 : std_logic;
+    nrc_from_to_star            : std_logic;
+    nrc_from_type_const_star    : std_logic;
+    nrc_from_const_star         : std_logic;
+    nrc_from_star_type          : std_logic;
+    nrc_set_mark                : std_logic;
+    nrc_set_unmark              : std_logic;
+    nrc_set_pointer             : std_logic;
+    nrc_set_type                : std_logic;
+  end record ncode_register_controls;
+
+  function to_string(a : ncode_register_controls) return string;
+
+  constant ncode_register_bits : natural := 10; -- should be generic as in
+                                                -- plapkg.vhdl
+
+  constant ncode_register_controls_init : ncode_register_controls := ((others => '0'));
   
   type io_bus_controls is record
-    -- I beleive the following are ONLY used on the bus
     bc_set_mark         : std_logic;
     bc_set_unmark       : std_logic;
     bc_set_pointer      : std_logic;
     bc_set_type         : std_logic;
   end record io_bus_controls;
 
+  -- shouldn't be needed 7/11/22
+  /*
   constant io_bus_controls_ignore : io_bus_controls := (bc_set_mark => 'Z',
                                                         bc_set_unmark => 'Z',
                                                         bc_set_pointer => 'Z',
                                                         bc_set_type => 'Z');
+  */
 
   constant io_bus_controls_init  : io_bus_controls := (bc_set_mark => '0',
                                                        bc_set_unmark => '0',
@@ -42,12 +79,15 @@ package regpkg is
                                          -- external pin
   end record io_bus_senses;
 
-  constant io_bus_senses_ignore : io_bus_senses := (mark_p => 'Z',
+  -- shouldn't be needed 7/11/22
+  /*
+    constant io_bus_senses_ignore : io_bus_senses := (mark_p => 'Z',
                                                     type_not_pointer => 'Z',
                                                     frame_eq_zero => 'Z',
                                                     displacement_eq_zero => 'Z',
                                                     address_eq_zero => 'Z',
                                                     sub_error => 'Z');
+  */
   
   constant io_bus_senses_init  : io_bus_senses := (mark_p => '0',
                                                    type_not_pointer => '0',
@@ -74,7 +114,9 @@ package regpkg is
                                         type_rest => (others => '0'),
                                         displacement => (others => '0'),
                                         frame => (others => '0'));
-  
+
+  -- shouldn't be needed 7/11/22
+
   constant s79_word_ignore: s79_word := ( mark_bit => 'Z',
                                           not_pointer_bit => 'Z',
                                           type_rest => (others => 'Z'),
@@ -82,39 +124,51 @@ package regpkg is
                                           frame => (others => 'Z'));
 
   function to_string ( a: s79_word) return string;
-    
-  type io_bus is record
-    bus_data        : s79_word;
+
+
+  -- output and input here are from the perspective of a bus client.
+
+  type output_bus is record
+    output_bus_data : s79_word;
     bus_controls    : io_bus_controls;
+  end record output_bus;
+
+  type input_bus is record
+    shared_bus_data : s79_word;
+    shared_bus_controls : io_bus_controls;
     bus_senses      : io_bus_senses;
-  end record io_bus;
+  end record input_bus;
 
-  constant io_bus_ignore : io_bus := ( bus_data => s79_word_ignore,
-                                       bus_controls => io_bus_controls_ignore,
-                                       bus_senses => io_bus_senses_ignore); 
+  constant output_bus_init : output_bus := ( output_bus_data => s79_word_init,
+                                             bus_controls => io_bus_controls_init);
 
-  constant io_bus_init : io_bus := ( bus_data => s79_word_init,
-                                     bus_controls => io_bus_controls_init,
-                                     bus_senses => io_bus_senses_init);
+  constant rc_to_bit                            : natural := 0; -- 0x0001
+  constant rc_to_type_bit                       : natural := 1; -- 0x0002
+  constant rc_to_displacement_bit               : natural := 2; -- 0x0004
+  constant rc_to_frame_bit                      : natural := 3; -- 0x0008
+  constant rc_to_address_bit                    : natural := 4; -- 0x0010
+  constant rc_from_bit                          : natural := 5; -- 0x0020
+  constant rc_from_decremented_bit              : natural := 6; -- 0x0040
+  constant rc_from_incremented_bit              : natural := 7; -- 0x0080
+  constant rc_from_decremented_frame_bit        : natural := 8; -- 0x0100
+  constant rc_from_decremented_displacement_bit : natural := 9; -- 0x0200
+  constant rc_from_type_bit                     : natural := 10; -- 0x0400
 
-  constant io_bus_dont_drive : io_bus := ( bus_data => s79_word_ignore,
-                                           bus_controls => io_bus_controls_init,   
-                                           bus_senses => io_bus_senses_ignore);
 
   type register_controls is record
     -- defined for scheme-79; this would have to be generated by project for generality
     -- see *control-wires* defined in s79-simulator/machine-defs
-    rc_to               : std_logic; -- = to_type AND to_address
-    rc_to_type          : std_logic;
-    rc_to_displacement  : std_logic;
-    rc_to_frame         : std_logic;
-    rc_to_address       : std_logic; -- = to_displacement AND to_frame
-    rc_from             : std_logic;
-    rc_from_decremented : std_logic;
-    rc_from_incremented : std_logic;
-    rc_from_decremented_frame : std_logic;
-    rc_from_decremented_displacement : std_logic;
-    rc_from_type        : std_logic;
+    rc_to                               : std_logic; -- = to_type AND to_address
+    rc_to_type                          : std_logic;
+    rc_to_displacement                  : std_logic;
+    rc_to_frame                         : std_logic;
+    rc_to_address                       : std_logic; -- = to_displacement AND to_frame
+    rc_from                             : std_logic;
+    rc_from_decremented                 : std_logic;
+    rc_from_incremented                 : std_logic;
+    rc_from_decremented_frame           : std_logic;
+    rc_from_decremented_displacement    : std_logic;
+    rc_from_type                        : std_logic;
   end record register_controls;
   
   constant register_controls_init : register_controls := (rc_to => '0',
@@ -128,8 +182,24 @@ package regpkg is
                                                           rc_from_decremented_frame => '0',
                                                           rc_from_decremented_displacement => '0',
                                                           rc_from_type => '0');
+  
 
+  -- shouldn't be needed 7/11/22
+  /*
   constant register_controls_ignore : register_controls := (others => 'Z');
+  */
+
+  subtype ncode_register_controls_field is std_logic_vector(ncode_register_bits - 1 downto 0);
+
+  function to_ncode_register_controls(entry : ncode_register_controls_field) return ncode_register_controls;
+
+  -- function to_register_controls(entry : ncode_register_controls_field) return register_controls;
+
+  function to_from_register_controls(entry : ncode_register_controls) return register_controls;
+
+  function to_to_register_controls(entry : ncode_register_controls) return register_controls;
+
+  function to_string(a : register_controls) return string;
 
   type register_senses is record
     -- defined for scheme-79; this would have to be generated by project for generality
@@ -206,7 +276,95 @@ package body regpkg is
       to_string(a.type_rest) &
       to_string(a.displacement) &
       to_string(a.frame);
-  end function;
-      
-end package body regpkg;
+  end function to_string;
+
+  function to_string(a : register_controls) return string is
+  begin
+    return 
+      "rc_to: " & to_string(a.rc_to) &
+      "; rc_to_type: " & to_string(a.rc_to_type) & 
+      "; rc_to_displacement: " & to_string(a.rc_to_displacement) & 
+      "; rc_to_frame: " & to_string(a.rc_to_frame) & 
+      "; rc_to_address: " & to_string(a.rc_to_address) & 
+      "; rc_from: " & to_string(a.rc_from) & 
+      "; rc_from_decremented: " & to_string(a.rc_from_decremented) & 
+      "; rc_from_incremented: " & to_string(a.rc_from_incremented) & 
+      "; rc_from_decremented_frame: " & to_string(a.rc_from_decremented_frame) & 
+      "; rc_from_decremented_displacement: " & to_string(a.rc_from_decremented_displacement) & 
+      "; rc_from_type: " & to_string(a.rc_from_type);
+  end function to_string;
+
+  function to_ncode_register_controls(entry : ncode_register_controls_field)
+    return ncode_register_controls is  
+    variable controls : ncode_register_controls;
+  begin
+    controls.nrc_from_star := entry(nrc_from_star_bit);
+    controls.nrc_to_star := entry(nrc_to_star_bit);
+    controls.nrc_from_to_star := entry(nrc_from_to_star_bit);
+    controls.nrc_from_type_const_star := entry(nrc_from_type_const_star_bit);
+    controls.nrc_from_const_star := entry(nrc_from_const_star_bit);
+    controls.nrc_from_star_type := entry(nrc_from_star_type_bit);
+    controls.nrc_set_mark := entry(nrc_set_mark_bit);
+    controls.nrc_set_unmark := entry(nrc_set_unmark_bit);
+    controls.nrc_set_pointer := entry(nrc_set_pointer_bit);
+    controls.nrc_set_type := entry(nrc_set_type_bit);
+    return controls;
+  end function to_ncode_register_controls;
+
+  -- presumably only comes up when using anaphors? Anyway this covers the cases
+  -- in the current test. Note we will need to take a pass at the LISP
+  -- simulation to elminate some unnessary(?) explicit controls on particular
+  -- registers when anaphor could be used instead (as in the original chip),
+  -- which means there will probably me more of the star controls (indirect
+  -- through the ucode) and this will become more populated.
+
+  -- also note that BUS controls are not addressed yet (TBD)
+  function to_from_register_controls(entry : ncode_register_controls) return register_controls is
+    variable controls : register_controls;
+  begin
+    controls.rc_to := '0';
+    controls.rc_to_type := '0';
+    controls.rc_to_displacement := '0';
+    controls.rc_to_frame := '0';
+    controls.rc_to_address := '0';
+    controls.rc_from := entry.nrc_from_star or entry.nrc_from_to_star;
+    controls.rc_from_decremented := '0'; -- ?
+    controls.rc_from_incremented := '0'; -- ?
+    controls.rc_from_decremented_frame := '0'; -- ?
+    controls.rc_from_decremented_displacement := '0'; -- ?
+    controls.rc_from_type := entry.nrc_from_star_type;
+    return controls;
+  end function to_from_register_controls;
   
+  function to_to_register_controls(entry : ncode_register_controls) return register_controls is
+    variable controls : register_controls;
+  begin
+    controls.rc_to := entry.nrc_to_star;
+    controls.rc_to_type := '0';
+    controls.rc_to_displacement := '0';
+    controls.rc_to_frame := '0';
+    controls.rc_to_address := '0';
+    controls.rc_from := '0';
+    controls.rc_from_decremented := '0'; 
+    controls.rc_from_incremented := '0'; 
+    controls.rc_from_decremented_frame := '0'; 
+    controls.rc_from_decremented_displacement := '0'; 
+    controls.rc_from_type := '0';
+    return controls;
+  end function to_to_register_controls;
+
+  function to_string(a : ncode_register_controls) return string is
+  begin
+    return "nrc_from_star: " & to_string(a.nrc_from_star) & "; " &
+      "nrc_to_star: " & to_string(a.nrc_to_star) & "; " &
+      "nrc_from_to_star: " & to_string(a.nrc_from_to_star) & "; " &
+      "nrc_from_type_const_star: " & to_string(a.nrc_from_type_const_star) & "; " &
+      "nrc_from_const_star: " & to_string(a.nrc_from_const_star) & "; " &
+      "nrc_from_star_type: " & to_string(a.nrc_from_star_type) & "; " &
+      "nrc_set_mark: " & to_string(a.nrc_set_mark) & "; " &
+      "nrc_set_unmark: " & to_string(a.nrc_set_unmark) & "; " &
+      "nrc_set_pointer: " & to_string(a.nrc_set_pointer) & "; " &
+      "nrc_set_type: " & to_string(a.nrc_set_type) & " ";
+  end function to_string;
+end package body regpkg;
+
