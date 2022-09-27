@@ -1,0 +1,52 @@
+# (delete these line before loading) hex words for ucode
+# each line consists of ucode_next, ucode_nano, ucode_from, and ucode_to.
+# (where ucode_nano is the address of the nano-op)
+# ucode max address: 16
+# ncode max address: 16
+# boot load address: 1
+# from_register_code: 2 (reg1, reg2), but increase to 8 bits so we can have interesting constants (from_codes = 255)
+# to_register_code: 3 (reg1, reg2, reg3), but increase to 4 bits so we can do easy math (to_codes = 15)
+# so hex F-F-FF-F or appended fffff would be all bits
+
+# our microcode program for the testbench:
+
+# skip address 0 (noop/loop)
+;A0
+00000
+# ((from-const 17) (to *reg1*) load)
+;A1 2-A-17-1
+2A171
+# ((from-const 31) (to *reg2*) load)
+;A2 3-A-31-2
+3A312
+# ((from *reg2*) (to *reg1*) write-car) ; (rplaca (fetch *reg1*) (fetch *reg2*)) ; address 17 should be affected
+;A3 4-6-02-1
+46021
+# ((from-const 42) (to *reg2*) load)
+;A4 5-A-42-2
+5A422
+# ((from *reg2*) (to *reg1*) write-and-mark-cdr)
+;A5 6-8-02-1
+68021
+# ((from *reg1*) (to *reg3*) do-car)
+;A6 7-2-01-3
+72013
+# ((from *reg1*) (to *reg3*) do-cdr)
+;A7 0-4-01-3
+04013
+# should be enough for a test! But fill out to ucode_max_address...
+;A8 0
+00000
+;A9 0
+00000
+;A10 0
+00000
+;A11 0
+00000
+;A12 0
+00000
+;A13 0
+00000
+;A14 0
+00000
+;A15 0

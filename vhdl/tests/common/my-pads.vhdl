@@ -2,7 +2,7 @@
 --                                                                   --
 -- Temporary pad support to help develop pad code                    --
 --                                                                   --
--- Time-stamp: <2022-08-18 12:32:10 Bradford W. Miller(on Boromir)>  --
+-- Time-stamp: <2022-09-01 11:57:20 Bradford W. Miller(on Boromir)>  --
 --                                                                   --
 -- --------------------------------------------------------------------
 
@@ -328,10 +328,15 @@ begin
 -- (defchip-pad *ale* :output *run-nanocontroller-p1*
 --              *run-external-data-transfer* 8) ; keep high for full tick
 
-  ALE_Pad_Control_Proc: process(clk2)
-    begin
-    if rising_edge(clk2) then
-      pad_ale <= my_pad_controls.set_ale;
+-- delay to clk2a rising edge (from clk2 rising edge) as the request to set_ale
+-- is typically on rising clk2. 8-31-22
+  
+  ALE_Pad_Control_Proc: process(clk2, clk2a)
+  begin
+    if (rising_edge(clk2) and (my_pad_controls.set_ale = '0')) then
+      pad_ale <= '0';     
+    elsif (rising_edge(clk2a) and (my_pad_controls.set_ale = '1')) then
+      pad_ale <= '1';
     end if;
   end process ALE_Pad_Control_Proc;
 
@@ -352,10 +357,12 @@ begin
 --              *run-external-data-transfer* 8) ; during the following phase 1 the data
 -- read should be placed on the pads
 
-  Read_Pad_Control_Proc: process(clk2)
-    begin
-    if rising_edge(clk2) then
-      pad_read <= my_pad_controls.set_read;
+  Read_Pad_Control_Proc: process(clk2, clk2a)
+  begin
+    if (rising_edge(clk2) and (my_pad_controls.set_read = '0')) then
+      pad_read <= '0';
+    elsif (rising_edge(clk2a) and (my_pad_controls.set_read = '1')) then
+      pad_read <= '1';
     end if;
   end process Read_Pad_Control_Proc;
 
@@ -370,10 +377,12 @@ begin
 --              *run-external-data-transfer* 8) ; similar to read but the following ph1
 -- will have the data to write on the pads
 
-  Write_Pad_Control_Proc: process(clk2)
-    begin
-    if rising_edge(clk2) then
-      pad_write <= my_pad_controls.set_write;
+  Write_Pad_Control_Proc: process(clk2, clk2a)
+  begin
+    if (rising_edge(clk2) and (my_pad_controls.set_write = '0')) then
+      pad_write <= '0';
+    elsif (rising_edge(clk2a) and (my_pad_controls.set_write = '1')) then
+      pad_write <= '1';
     end if;
   end process Write_Pad_Control_Proc;
 
@@ -382,10 +391,12 @@ begin
 -- (defchip-pad *cdr* :output *run-nanocontroller-p1*
 --              *run-external-data-transfer* 8)
 
-  CDR_Pad_Control_Proc: process(clk2)
+  CDR_Pad_Control_Proc: process(clk2, clk2a)
     begin
-    if rising_edge(clk2) then
-      pad_cdr <= my_pad_controls.set_cdr;
+    if (rising_edge(clk2) and (my_pad_controls.set_cdr = '0')) then
+      pad_cdr <= '0';
+    elsif (rising_edge(clk2a) and (my_pad_controls.set_cdr = '1')) then
+      pad_cdr <= '1';
     end if;
   end process CDR_Pad_Control_Proc;
 
@@ -395,10 +406,12 @@ begin
 -- (defchip-pad *read-interrupt* :output *run-nanocontroller-p1*
 --              *run-external-data-transfer* 8) ; treat like a read
 
-  Read_Interrupt_Control_Proc: process(clk2)
+  Read_Interrupt_Control_Proc: process(clk2, clk2a)
   begin
-    if rising_edge(clk2) then
-      pad_read_interrupt <= my_pad_controls.set_read_interrupt;
+    if (rising_edge(clk2) and (my_pad_controls.set_read_interrupt = '0')) then
+      pad_read_interrupt <= '0';
+    elsif (rising_edge(clk2a) and (my_pad_controls.set_read_interrupt = '1')) then
+      pad_read_interrupt <= '1';
     end if;
   end process Read_Interrupt_Control_Proc;
 
@@ -438,7 +451,7 @@ begin
 -- :ph1-falling
 --
 --(defchip-pad *conditional* :pseudo *run-nanocontroller-p1*
---             *update-sense-wires* 7)
+  --             *update-sense-wires* 7)
   Conditional_Control_Proc: process(clk2)
   begin
     if falling_edge(clk2) then -- delay to falling edge as bit set by nano on
@@ -454,7 +467,7 @@ begin
 
 -- (defchip-pad *run-nano* :latched-io *run-nanocontroller-p1* :any 8) ; full
 -- clock cycle as we may reassert
-  Run_Nano_Control_Proc: process (clk2)
+  Run_Nano_Control_Proc: process (clk2, clk2a)
   begin
     if (my_pad_controls.set_run_nano = '1') then
       run_nano_latch <= '1';
@@ -462,7 +475,7 @@ begin
       run_nano_latch <= '0';
     end if;
         
-    if falling_edge(clk2) then
+    if falling_edge(clk2a) then
       run_nano_p <= run_nano_latch;
     end if;
   end process Run_Nano_Control_Proc;

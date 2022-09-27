@@ -2,7 +2,7 @@
 --                                               --
 -- Temporary registers to develop register code  --
 --                                               --
--- Time-stamp: <2022-09-20 17:18:24 Bradford W. Miller(on Boromir)>      --
+-- Time-stamp: <2022-09-20 17:18:03 Bradford W. Miller(on Boromir)>      --
 --                                               --
 -- ------------------------------------------------
 
@@ -26,7 +26,7 @@ use ieee.numeric_std.all;
 use work.regpkg.all; -- temporary register types
 use work.padpkg.all; -- pad controls 
 
-entity bus_master6 is
+entity bus_master7 is
 
   generic (
     Simulation_on : boolean := false; -- not currently using, but 'just in case'
@@ -49,11 +49,12 @@ entity bus_master6 is
     ibus3    : in    output_bus;
     ibus4    : in    output_bus;
     ibus5    : in    output_bus;
-    ibus6    : in    output_bus);     -- output from module2
+    ibus6    : in    output_bus;
+    ibus7    : in    output_bus);     
 
-end entity bus_master6;
+end entity bus_master7;
 
-architecture bus_arch of bus_master6 is
+architecture bus_arch of bus_master7 is
 begin
   Bus_Mux_Proc : process (rst, clk1, clk2, clk1a, clk2a)
     variable disp : std_logic_vector (11 downto 0); 
@@ -84,33 +85,42 @@ begin
       else
         mux_out.mark_bit := ibus1.output_bus_data.mark_bit or ibus2.output_bus_data.mark_bit or
                             ibus3.output_bus_data.mark_bit or ibus4.output_bus_data.mark_bit or
-                            ibus5.output_bus_data.mark_bit or ibus6.output_bus_data.mark_bit;
+                            ibus5.output_bus_data.mark_bit or ibus6.output_bus_data.mark_bit or
+                            ibus7.output_bus_data.mark_bit;
         mux_out.not_pointer_bit := ibus1.output_bus_data.not_pointer_bit or ibus2.output_bus_data.not_pointer_bit or
                                    ibus3.output_bus_data.not_pointer_bit or ibus4.output_bus_data.not_pointer_bit or
-                                   ibus5.output_bus_data.not_pointer_bit or ibus6.output_bus_data.not_pointer_bit;
+                                   ibus5.output_bus_data.not_pointer_bit or ibus6.output_bus_data.not_pointer_bit or
+                                   ibus7.output_bus_data.not_pointer_bit;
         mux_out.type_rest := ibus1.output_bus_data.type_rest or ibus2.output_bus_data.type_rest or
                              ibus3.output_bus_data.type_rest or ibus4.output_bus_data.type_rest or
-                             ibus5.output_bus_data.type_rest or ibus6.output_bus_data.type_rest;
+                             ibus5.output_bus_data.type_rest or ibus6.output_bus_data.type_rest or
+                             ibus7.output_bus_data.type_rest;
         disp := std_logic_vector(ibus1.output_bus_data.displacement) or std_logic_vector(ibus2.output_bus_data.displacement) or
                 std_logic_vector(ibus3.output_bus_data.displacement) or std_logic_vector(ibus4.output_bus_data.displacement) or
-                std_logic_vector(ibus5.output_bus_data.displacement) or std_logic_vector(ibus6.output_bus_data.displacement);
+                std_logic_vector(ibus5.output_bus_data.displacement) or std_logic_vector(ibus6.output_bus_data.displacement) or
+                std_logic_vector(ibus7.output_bus_data.displacement);
         fram := std_logic_vector(ibus1.output_bus_data.frame) or std_logic_vector(ibus2.output_bus_data.frame) or
                 std_logic_vector(ibus3.output_bus_data.frame) or std_logic_vector(ibus4.output_bus_data.frame) or
-                std_logic_vector(ibus5.output_bus_data.frame) or std_logic_vector(ibus6.output_bus_data.frame);
+                std_logic_vector(ibus5.output_bus_data.frame) or std_logic_vector(ibus6.output_bus_data.frame) or
+                std_logic_vector(ibus7.output_bus_data.frame);
       end if;
       
       controls_out.bc_set_mark := ibus1.bus_controls.bc_set_mark or ibus2.bus_controls.bc_set_mark or
                                   ibus3.bus_controls.bc_set_mark or ibus4.bus_controls.bc_set_mark or
-                                  ibus5.bus_controls.bc_set_mark or ibus6.bus_controls.bc_set_mark;
+                                  ibus5.bus_controls.bc_set_mark or ibus6.bus_controls.bc_set_mark or
+                                  ibus7.bus_controls.bc_set_mark;
       controls_out.bc_set_unmark := ibus1.bus_controls.bc_set_unmark or ibus2.bus_controls.bc_set_unmark or
                                     ibus3.bus_controls.bc_set_unmark or ibus4.bus_controls.bc_set_unmark or
-                                    ibus5.bus_controls.bc_set_unmark or ibus6.bus_controls.bc_set_unmark;
+                                    ibus5.bus_controls.bc_set_unmark or ibus6.bus_controls.bc_set_unmark or
+                                    ibus7.bus_controls.bc_set_unmark;
       controls_out.bc_set_pointer := ibus1.bus_controls.bc_set_pointer or ibus2.bus_controls.bc_set_pointer or
                                      ibus3.bus_controls.bc_set_pointer or ibus4.bus_controls.bc_set_pointer or
-                                     ibus5.bus_controls.bc_set_pointer or ibus6.bus_controls.bc_set_pointer;
+                                     ibus5.bus_controls.bc_set_pointer or ibus6.bus_controls.bc_set_pointer or
+                                     ibus7.bus_controls.bc_set_pointer;
       controls_out.bc_set_type := ibus1.bus_controls.bc_set_type or ibus2.bus_controls.bc_set_type or
                                   ibus3.bus_controls.bc_set_type or ibus4.bus_controls.bc_set_type or
-                                  ibus5.bus_controls.bc_set_type or ibus6.bus_controls.bc_set_type;
+                                  ibus5.bus_controls.bc_set_type or ibus6.bus_controls.bc_set_type or
+                                  ibus7.bus_controls.bc_set_type;
       
       mux_out.displacement := unsigned(disp);
       mux_out.frame := unsigned(fram);

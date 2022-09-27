@@ -2,7 +2,7 @@
 --                                                                   --
 -- Temporary "library" to help develop register code                 --
 --                                                                   --
--- Time-stamp: <2022-08-09 16:06:55 Bradford W. Miller(on Boromir)>  --
+-- Time-stamp: <2022-09-26 21:03:46 Bradford W. Miller(on Boromir)>  --
 --                                                                   --
 -- --------------------------------------------------------------------
 
@@ -271,11 +271,10 @@ package body regpkg is
 
   function to_string(a: s79_word) return string is
   begin
-    return to_string(a.mark_bit) &
-      to_string(a.not_pointer_bit) &
-      to_string(a.type_rest) &
-      to_string(a.displacement) &
-      to_string(a.frame);
+    return to_hstring(a.mark_bit & a.not_pointer_bit & a.type_rest(5 downto 4)) &
+      to_hstring(a.type_rest(3 downto 0)) &
+      to_hstring(a.displacement) &
+      to_hstring(a.frame);
   end function to_string;
 
   function to_string(a : register_controls) return string is

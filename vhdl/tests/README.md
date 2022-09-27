@@ -1,5 +1,5 @@
 # VHDL Generation Tests
-#### Time-stamp: <2022-06-03 11:45:46 Bradford W. Miller(on Boromir)>
+#### Time-stamp: <2022-09-13 11:22:15 Bradford W. Miller(on Boromir)>
 
 For the most part, this directory contains handwritten tests in VHDL that can
 be run in ghdl and analyzed with gtkwave. The intent is to explore what the
@@ -27,7 +27,7 @@ a shared bus (the only internal bus in scheme-79). The simulation was
 hand-checked for validity.
 
 Note that this test (as does the others) currently utelizes tristate
-busses. Since that isn't really internally supported by current FPGA chips I
+busses*. Since that isn't really internally supported by current FPGA chips I
 will need to reimplement using a MUX strategy such as that used by common more
 modern busses like AXI or Wishbone. However as these are really outside the
 spirit of the original single bus on the Scheme-79 chip I expect to roll my own
@@ -49,7 +49,7 @@ for what we should generate for various field definitions, registers, the bus,
 etc. and should be driven from the lisp declarations in s79-simulator. Again,
 the timing was hand-checked for validity.
 
-See the comment under 1reg for dealing with the tristate bus (TBD).
+See the comment under 1reg for dealing with the tristate bus*.
 
 ### pads
 
@@ -87,7 +87,7 @@ on falling_edge(clk1).
 
 I will replicate this strategy in the lisp simulator as the declarations are
 modified to generate VHDL as well as lisp code (5-17-22: TBD). See also the
-comment under 1reg for dealing with the tristate bus (TBD).
+comment under 1reg for dealing with the tristate bus*.
 
 ### plas
 
@@ -110,4 +110,26 @@ run_nano signal) just as the chip does when reading and writing to memory.
 Even constructing this limited version does indicate that some special cases
 used for expediency in the lisp simulator will need to be regularized to be
 constructed by the declarative macros we hope to leverage to build both the
-lisp simulation and VHDL implementation of a processor.
+lisp simulation and VHDL implementation of a processor. 
+
+I'm also concerned that being too faithful to the original chip will lead to
+issues implementing, e.g., the RAM on board the FPGA since the tristate bus
+used for access to and from memory wouldn't be supported internally. Current
+plan (9/2022) is to possibly issue a "scheme-79+" project that presumes most if
+not all peripherals (memory, side processors) would be implemented eventually
+on the FPGA fabric and thus eliminate remaining tristate signals in favor of
+status-related pins useful for debugging and monitoring the state of the
+(running) system. A bit of a departure from historical accuracy, but even the
+timing has had to be tweaked given FPGAs usually are triggered by clock edges
+while the original code seems to have been triggered by clock levels
+necessitating some minor changes to the published timing (so certain signals
+are stable over the edge of the clock rather than during or only on the latter
+half of a clock).
+
+#### Endnotes:
+
+* Tristate busses other than for the "external" busses as for memory access,
+  have been eliminated internally, instead using an OR function (rather than an
+  actual MUX). This at least makes debugging easier as collisions just end up
+  with wrong but non-conflicting values and can be easier to trace by looking
+  at the individual input lines to the mux.

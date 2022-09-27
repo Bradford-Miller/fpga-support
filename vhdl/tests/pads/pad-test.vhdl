@@ -1,13 +1,12 @@
--- ------------------------------------------------
---                                               --
--- Temporary registers to develop register code  --
---                                               --
--- Time-stamp: <2022-08-18 12:34:40 Bradford W. Miller(on Boromir)>      --
---                                               --
---       This is the pad timing test of the      --
---                   Testbench!                  --
---                                               --
--- ------------------------------------------------
+-- ------------------------------------------------------------------------
+--                                                                       --
+-- Temporary registers to develop pad code  and check timing             --
+--                                                                       --
+-- Time-stamp: <2022-09-12 16:39:54 Bradford W. Miller(on Boromir)>      --
+--                                                                       --
+--       This is the pad timing test of the Testbench!                   --
+--                                                                       --
+-- ------------------------------------------------------------------------
 
 use std.env.all;
     
@@ -37,9 +36,7 @@ end entity tb_pads_1;
 architecture behav_pads_1 of tb_pads_1 is
   component bus_master6
     generic (
-      Simulation_on : boolean := false; -- not currently using, but 'just in case'
-      Word_width    : integer := 32); -- ideally we'd pass this to io_bus or get
-                                      -- it from there?
+      Simulation_on : boolean := false); -- not currently using, but 'just in case'
     port (
       clk1     : in    std_logic;
       clk2     : in    std_logic;     -- two phase clock
@@ -61,9 +58,7 @@ architecture behav_pads_1 of tb_pads_1 is
 
   component my_register
     generic (
-      Simulation_on : boolean := false; -- not currently using, but 'just in case'
-      Word_width    : integer := 32); -- ideally we'd pass this to io_bus or get
-                                    -- it from there?
+      Simulation_on : boolean := false); -- not currently using, but 'just in case'
     port (
       clk1     : in    std_logic;
       clk2     : in    std_logic;     -- two phase clock
@@ -369,6 +364,7 @@ begin
       clk2a <= '0';
     end if;
   end process Clock_Gen;
+
   ------------------
   -- reset generator
   ------------------
@@ -398,8 +394,8 @@ begin
   --                 which will...
   -- falling(clk2): set up controls for next clk1 cycle
   --
-  -- note we don't have an actual microcontrol or nanocontrol but will simulate
-  -- it here.
+  -- note we don't have an actual microcontrol or nanocontrol but will try to
+  -- have the cycles match
 
   -- this tries to work out the "lead time" needed for placing signals on the
   -- bus or controls to get the "right" (per the AIM) timing for memory
@@ -473,8 +469,6 @@ begin
     wait until falling_edge(clk2); -- tick A
     -- now read the cdr, address should be 0x4
     SetControls(reg_address_controls.rc_to, acc1_controls.rc_from, clk1); --
-    -- ***** obus right but memory bus wrong? 
-    -- obusme <= output_bus_init;
 
     -- wait until falling_edge(clk1); -- tick B
     my_pad_controls.set_ale <= '0';
@@ -514,7 +508,7 @@ begin
     wait on rst;
   end process Pad_Test;
   
-  Memory_Sim : process(clk1, clk2)
+  Memory_Sim : process(clk1, clk1a, clk2)
     variable expect_address : std_logic := '0';
     variable address : unsigned(23 downto 0);
     
@@ -560,9 +554,9 @@ begin
           " to address " & to_string(address) &
           " cdr_p " & to_string(pad_cdr);
       end if;
-    end if;
-    
-    if falling_edge(clk2) then -- *test-ale-to-expect-address*
+    elsif falling_edge(clk1a) and (pad_freeze = '0') and (pad_read = '1) then
+      pads_memory_bus <= s79_word_ignore; -- stop writing to bus at end of clk1a
+    elsif falling_edge(clk2) then -- *test-ale-to-expect-address*
       if (pad_ale = '1') then
         report "tick: " & to_string(tick) &
           " ale detected";
