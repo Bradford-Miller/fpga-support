@@ -1,4 +1,6 @@
-# (delete these line before loading) hex words for ucode
+# DO NOT LOAD this version of the file. A version with only the ucode as hex
+# is in ucode_hex.txt
+
 # each line consists of ucode_next, ucode_nano, ucode_from, and ucode_to.
 # (where ucode_nano is the address of the nano-op)
 # ucode max address: 16
@@ -32,21 +34,45 @@
 ;A6 7-2-01-3
 72013
 # ((from *reg1*) (to *reg3*) do-cdr)
-;A7 0-4-01-3
-04013
-# should be enough for a test! But fill out to ucode_max_address...
-;A8 0
-00000
-;A9 0
-00000
-;A10 0
-00000
-;A11 0
-00000
+;A7 8-4-01-3
+84013
+
+# add additional ucode to test conditionals
+# note conditional fail should be to an EVEN opcode address and success to the following ODD opcode address!
+# note that this should SUCCEED so we expect reg3 to be unchanged (preload it with something distinguished
+# ((from-const 77) (to *reg3*) load)
+;A8 9-A-77-3
+9A773
+# ((from *reg1*) (branch displacement=0-bus A10 A11))
+# each line consists of ucode_next, ucode_nano, ucode_from, and ucode_to.
+;A9 A-B-01-8
+AB018
+# fail: put reg1 into reg3
+# NB: the FAIL address is the "next" address in the branch and should be an EVEN address (low order address bit 0)
+#     in real code this will typically be a goto/jump
+#((from *reg1*) (to *reg3*) load)
+;A10 B-1-01-3
+B1013
+# succeed (well really both): put reg1 into reg2
+# NB: should be address +1 from the fail address
+#((from *reg1*) (to *reg2*) load)
+;A11 C-1-01-2
+C1012
+# now try to make it fail (well we would but we'd need larger constants that stuff things into the diplacement part of
+# the register) so let's just go with the succeed case for now ;-)
+# ((from-const 77777) (to *reg1*) load)
 ;A12 0
 00000
+# ((from *reg1*) (branch displacement=0-bus A14 A15)
 ;A13 0
 00000
+# fail: put reg1 into reg3
+#((from *reg1*) (to *reg3*) load)
 ;A14 0
 00000
+# succeed (well really both): put reg1 into reg2
+#((from *reg1*) (to *reg2*) load)
 ;A15 0
+00000
+# now we (would) expect ALL 3 registers to have 77777!
+# TEST END

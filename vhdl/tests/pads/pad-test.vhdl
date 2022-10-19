@@ -2,7 +2,7 @@
 --                                                                       --
 -- Temporary registers to develop pad code  and check timing             --
 --                                                                       --
--- Time-stamp: <2022-09-12 16:39:54 Bradford W. Miller(on Boromir)>      --
+-- Time-stamp: <2022-10-18 13:16:35 Bradford W. Miller(on Boromir)>      --
 --                                                                       --
 --       This is the pad timing test of the Testbench!                   --
 --                                                                       --
@@ -554,7 +554,7 @@ begin
           " to address " & to_string(address) &
           " cdr_p " & to_string(pad_cdr);
       end if;
-    elsif falling_edge(clk1a) and (pad_freeze = '0') and (pad_read = '1) then
+    elsif falling_edge(clk1a) and (pad_freeze = '0') and (pad_read = '1') then
       pads_memory_bus <= s79_word_ignore; -- stop writing to bus at end of clk1a
     elsif falling_edge(clk2) then -- *test-ale-to-expect-address*
       if (pad_ale = '1') then

@@ -3,7 +3,7 @@
 --               Temporary plas (ROMs) to develop micro and              --
 --                  nanocontroller code representation                   --
 --                                                                       --
---   Time-stamp: <2022-09-26 20:50:34 Bradford W. Miller(on Boromir)>    --
+--   Time-stamp: <2022-10-19 14:32:51 Bradford W. Miller(on Boromir)>    --
 --                                                                       --
 -- ------------------------------------------------------------------------
 
@@ -76,6 +76,7 @@ entity pla_master is
     
     run_nano            : in  std_logic;
     pad_freeze          : in  std_logic;
+    pad_conditional_p   : in  std_logic;
 
     ncode_value         : out ncode_word;
     ucode_value         : out ucode_word;
@@ -123,9 +124,11 @@ architecture behav_pla_master of pla_master is
       hread(text_line, ucode_content(i));
       --report "converted: " & to_string(ucode_content(i)); -- worked!
     end loop;
-    -- print out a few entries to make sure we got it
-    --report "ucode_content(1): " & to_string(to_ucode_word(ucode_content(1))) severity note;
-    --report "ucode_content(2): " & to_string(to_ucode_word(ucode_content(2))) severity note;
+    -- print out to make sure we got it
+    --report "ucode_content: " severity note;
+    --for i in 0 to ucode_max_address loop
+      --report to_string(to_ucode_word(ucode_content(i))) severity note;
+    --end loop;
     return ucode_content;
   end function init_ucode_rom;
 
@@ -163,6 +166,11 @@ architecture behav_pla_master of pla_master is
   begin
     return to_ncode_word(ncode_rom(i));
   end function get_ncode;
+
+  -- bug 10/19/22 - since we call both set_from and set_to sometimes we don't
+  -- want the latter call to override the register controls of the former. So
+  -- we are removing the setting of the non-relevant controls to the init
+  -- form and relying on the mainline code to reset (on fall clk1).
   
   procedure set_from_anaphor_control(variable code : in ucode_from_field;
                                      variable reg_control : in ncode_register_controls;
@@ -176,15 +184,8 @@ architecture behav_pla_master of pla_master is
     case (from_code) is
       when reg1 =>
         xreg1_controls <= to_from_register_controls(reg_control);
-        xreg2_controls <= register_controls_init;   -- we may set to controls
-                                                    -- on this register, but
-                                                    -- we also don't have
-                                                    -- internal tristates so
-                                                    -- may need to modify
-                                                    -- this
       when reg2 =>
         xreg2_controls <= to_from_register_controls(reg_control);
-        xreg1_controls <= register_controls_init;
       when none =>
         assert false report "illegitimate from_anaphor_code: " & to_string(code);
     end case;
@@ -202,15 +203,9 @@ architecture behav_pla_master of pla_master is
     case (to_code) is
       when reg1 =>
         xreg1_controls <= to_to_register_controls(reg_control);
-        xreg2_controls <= register_controls_init;
-        xreg3_controls <= register_controls_init;
       when reg2 =>
-        xreg1_controls <= register_controls_init;
         xreg2_controls <= to_to_register_controls(reg_control);
-        xreg3_controls <= register_controls_init;
       when reg3 =>
-        xreg1_controls <= register_controls_init;
-        xreg2_controls <= register_controls_init;
         xreg3_controls <= to_to_register_controls(reg_control);
       when none =>      
         assert false report "illegitimate to_anaphor_code: " & to_string(code);
@@ -267,12 +262,18 @@ begin
                                                 -- the address) but we have to
                                                 -- convert it to the right
                                                 -- number of bits
+    variable condition_obtains : std_logic := '0';
+    variable initial_pc_p : std_logic := '1';
+    variable current_ucode_pc : ucode_address;
   begin
     if (rst = '1') then
       if falling_edge(clk1) then -- when we currently check the reset
                                  -- pad
         --init microcode pc to boot-load
         ucode_pc <= boot_load_address;
+        current_ucode_pc := boot_load_address;
+        initial_pc_p := '1'; -- will prevent us skipping execution of the first PC
+        
         ncode_pc <= idle_ncode_pc;
         -- init bus & controls
         obus <= output_bus_init;
@@ -285,29 +286,70 @@ begin
         reg3_controls <= register_controls_init;
       end if;
     else
-      if ((pad_freeze = '0') AND (run_nano = '0')) then
-        if rising_edge(clk1) then
-          -- run microcontroller. Real work done by nanocontroller on clk2 rising.
-          ucode_value <= get_ucode(ucode_pc); -- updates ucode_next, ucode_nano,
-                                              -- ucode_from, ucode_to
-          assert false report "updating ucode_pc (for next cycle) from: " & to_hstring(ucode_pc) &
-            " to: " & to_hstring(get_ucode(ucode_pc).ucode_next) &
-            " current value: " & to_string(get_ucode(ucode_pc)) severity note;
-        elsif rising_edge(clk1a) then
-          ucode_pc <= get_ucode(ucode_pc).ucode_next;
-          ncode_pc <= get_ucode(ucode_pc).ucode_nano; 
+      if ((pad_freeze = '0') AND (run_nano = '0') and falling_edge(clk1)) then
+        -- rising edge clk1, clk1a we are performing nanocode work from last cycle
+        -- (register moves) so delay updating ucode until clk1 falling 10/19/22
+
+        if (pad_conditional_p = '1') then
+        
+          -- new expanded version of 10/6/22: handle when the conditional pad
+          -- is set (so we need to check the condition and adjust the PC)
+
+          -- BUG (10/13/22) (fixed?? 10/14/22 - moved code to clk2a falling),
+          -- (fixed again? 10/19/22 - moved to where we calculate the PC AND do test at
+          -- that point, which should be AFTER we update the registers (most
+          -- conditionals occur after a register load) Note we moved
+          -- calculating next pc to clk1a FALLING from clk1a RISING for this
+          -- reason.
+
+          -- perform conditional evaluation condition obtains if all the
+          -- sense lines represented by the TO field are positive, in which
+          -- case the low order bit of the (next) ucode PC is set.
+
+          report "*** pad_conditional_p obtains, testing against " & to_string(ibus.shared_bus_data);
+          -- check bus senses here (later, check register senses here too if
+          -- relevant)
+          if (((u_to(mbs_mark_p) = '0') OR
+               ((u_to(mbs_mark_p) = '1') AND (ibus.bus_senses.mark_p = '1'))) AND
+              ((u_to(mbs_type_not_pointer) = '0') OR
+               ((u_to(mbs_type_not_pointer) = '1') AND (ibus.bus_senses.type_not_pointer = '1'))) AND
+              ((u_to(mbs_frame_eq_zero) = '0') OR
+               ((u_to(mbs_frame_eq_zero) = '1') AND (ibus.bus_senses.frame_eq_zero = '1'))) AND
+              ((u_to(mbs_displacement_eq_zero) = '0') OR
+               ((u_to(mbs_displacement_eq_zero) = '1') AND (ibus.bus_senses.displacement_eq_zero = '1')))) then
+            report "*** conditional obtains!";
+
+            -- current ucode_pc should have the FAIL address, so we add one to
+            -- get the success address
+            current_ucode_pc := get_ucode(ucode_pc).ucode_next;
+            current_ucode_pc(0) := '1';
+          else
+            current_ucode_pc := get_ucode(ucode_pc).ucode_next;
+            report "*** conditional fails!";
+            -- current ucode_pc should be correct (for fail)
+          end if;
+
+        elsif (initial_pc_p = '1') then
+          current_ucode_pc := ucode_pc;
+          initial_pc_p := '0';
+
+        else -- not conditional
+          current_ucode_pc := get_ucode(ucode_pc).ucode_next;
+
         end if;
+        ucode_pc <= current_ucode_pc;
+        ncode_pc <= get_ucode(current_ucode_pc).ucode_nano; 
+        -- run microcontroller. Real work done by nanocontroller on clk2 rising.
+        ucode_value <= get_ucode(current_ucode_pc); -- updates ucode_next,
+                                            -- ucode_nano, ucode_from,
+                                            -- ucode_to for next cycle
+        assert false report "updating ucode_pc from: " & to_hstring(ucode_pc) &
+          " to: " & to_hstring(current_ucode_pc) &
+          " current value: " & to_string(get_ucode(current_ucode_pc)) severity note;
       end if;
-      
+        
       if ((pad_freeze = '0') AND rising_edge(clk2)) then
-        --if (run_nano = '0') then
-        --  current_ncode_pc := ucode_value.ucode_nano; -- for THIS
-                                                      -- nano cycle
-        --else
-        --  current_ncode_pc := ncode_pc; -- for THIS nano cycle (what we
-                                        -- updated last cycle)
-        --end if;
-        assert false report "ncode_pc: " & to_hstring(ncode_pc) severity note; 
+        assert false report "executing ncode_pc: " & to_hstring(ncode_pc) severity note; 
 
         u_from := ucode_value.ucode_from;
         u_to := ucode_value.ucode_to;
@@ -322,6 +364,7 @@ begin
         current_ncode_register_controls := get_ncode(ncode_pc).ncode_register;
 
         -- pad and register controls are bit encoded
+        -- report "setting my_pad_controls: " & to_string(current_ncode_pad_controls);
         my_pad_controls <= current_ncode_pad_controls;
 
         -- registers are a bit tricksy (Gollum!)
@@ -375,8 +418,9 @@ begin
           -- ranges as used in regpkg, may want to make their own (type)
           -- constants...
 
-          -- this really should also limit what we copy to only the type field
-          -- too, but hopefully the microcode already does that in the current_ncode_register_controls.
+          -- this really should also limit what we copy to only the type
+          -- field too, but hopefully the microcode already does that in the
+          -- current_ncode_register_controls.
           obus.output_bus_data.not_pointer_bit <= u_from(6);
           obus.output_bus_data.type_rest <= u_from(5 downto 0);
         end if;
@@ -398,7 +442,7 @@ begin
 
       elsif rising_edge(clk2a) then
         ncode_pc <= get_ncode(ncode_pc).ncode_next; -- for NEXT nano cycle
-        
+
       elsif ((pad_freeze = '0') AND falling_edge(clk1)) then
         -- clean up nanocontrols. We can just set everything back to zero, I think
         reg1_controls <= register_controls_init;

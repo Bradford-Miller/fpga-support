@@ -1,10 +1,17 @@
-# (delete these line before loading) hex words for ncode
+# DO NOT LOAD this version of the file. A version with only the
+# actual nanocodes is in ncode_hex.txt
+
 # each line consists of ncode_pad, ncode_register, ncode_next
 # pad_bits: 14
 # register_bits: 10 
 # ncode max address: 16 (4 bits)
 
-# so hex 3FFF-3FF-F or appended FFFFFFF would be all bits
+# yes, my life would have been easier for hand assembling if each of these fields was a multiple of 4 bits (for the sake
+# of the hex)
+
+# anyway, so hex 3FFF-3FF-F or appended FFFFFFF would be all bits, and when we translate between these two we have to
+# right shift the bits in the first field into the top two bits of the second field to get the final code. (Fortunately
+# the reality is we will have a microcode compiler/assembler to do that for us once we implement the whole enchalada)
 
 # some nanocode to hand build for our testbench:
 ;(defnano (microlisp-shared::no-op)
@@ -25,10 +32,10 @@
 ;(defnano (microlisp-shared::do-cdr)
 ;   ((from*) (ale))    
 ;  ((to*) (read cdr)))
-;address 4: 1005-001-5 [set_memory_pads]
-;address 5: 202A-002-0 [get_memory_pads]
+;address 4: 1005-001-5 [set_memory_pads, ale_pad, set_run_nano]
+;address 5: 202A-002-0 [get_memory_pads, cdr_pad, read_pad, clear_run_nano]
 4014015
-8024020
+80A8020
 ;(defnano (microlisp-shared::write-car)
 ;  ((from-to*) (ale))
 ;  ((from* unmark!-bus) (write)))
@@ -51,10 +58,17 @@
 ;address A: 0000-012-0
 0000120
 
-# should be enough for a test!
+# add additional ncode to test conditionals
+# the FROM register (if set) is loaded onto the bus, the TO field is taken as a condition instead of a register.
+# the sense wires are ORed and affect the low order bit for the microcontroller's next PC.
+;(defnano (microlisp-shared::sense-and-branch-const)
+;   ((from*) (set-condition))
+;address B: 0201-001-0 [conditional_pad]
+0800010
+
+;
+;
 # fill out to ncode_max_address
-;address B: 0
-0000000
 ;address C: 0
 0000000
 ;address D: 0

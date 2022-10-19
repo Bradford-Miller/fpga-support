@@ -2,7 +2,7 @@
 --                                                                       --
 -- Testbench for my-plas and associated structures for micro and nanocode--
 --                                                                       --
---   Time-stamp: <2022-09-26 21:26:48 Bradford W. Miller(on Boromir)>    --
+--   Time-stamp: <2022-10-12 12:08:24 Bradford W. Miller(on Boromir)>    --
 --                                                                       --
 -- ------------------------------------------------------------------------
 
@@ -168,6 +168,7 @@ architecture behav_plas_1 of tb_plas_1 is
     
       run_nano          : in  std_logic;
       pad_freeze        : in  std_logic;
+      pad_conditional_p : in  std_logic;
 
       ncode_value       : out ncode_word;
       ucode_value       : out ucode_word;
@@ -400,6 +401,7 @@ begin
 
       run_nano => run_nano_p,
       pad_freeze => pad_freeze,
+      pad_conditional_p => conditional_p,
 
       ncode_value => current_ncode,
       ucode_value => current_ucode,
@@ -691,7 +693,7 @@ begin
       if (pad_freeze = '0') and (pad_read = '1') then
         -- fake reading the memory
         assert false report "**Memory_Sim** tick: " & to_hstring(tick) &
-          " FAKING reading memory at address " & to_hstring(address) &
+          " FAKEING reading memory at address " & to_hstring(address) &
           " cdr_p " & to_string(pad_cdr) &
           " RETURNING x7ff0f0f0"
           severity note;
@@ -702,7 +704,7 @@ begin
                              frame => x"0f0");
       elsif (pad_read_interrupt = '1') then
         assert false report "**Memory_Sim** tick: " & to_hstring(tick) &
-          "FAKING reading interrupt vector (set to constant x000111)"
+          "FAKEING reading interrupt vector (set to constant x000111)"
           severity note;
         pads_memory_bus <= ( mark_bit => '0',
                              not_pointer_bit => '0',
@@ -722,7 +724,7 @@ begin
       elsif (pad_freeze = '0') and (pad_write = '1') then
         -- fake writing the memory
         assert false report "**Memory_Sim** tick: " & to_hstring(tick) &
-          " FAKING writing " & to_string(pads_memory_bus) &
+          " FAKEING writing " & to_string(pads_memory_bus) &
           " to address " & to_hstring(address) &
           " cdr_p " & to_string(pad_cdr)
           severity note;

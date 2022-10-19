@@ -2,7 +2,7 @@
 --                                               --
 -- Temporary registers to develop register code  --
 --                                               --
--- Time-stamp: <2022-08-09 13:28:52 Bradford W. Miller(on Boromir)>      --
+-- Time-stamp: <2022-10-18 13:00:31 Bradford W. Miller(on Boromir)>      --
 --                                               --
 -- ------------------------------------------------
 
@@ -14,7 +14,9 @@
 
 -- 7/11/22 bite the bullet and separate input and output busses, adding arbitration
 
--- also by having a separate entity, we can add arbitration later if needed?
+-- 10/18/22 try having bus be async to clock (sensitive to input changes only)
+-- to resolve some latency! (seems to be OK here!)
+
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
@@ -43,7 +45,7 @@ end entity bus_master2;
 
 architecture bus_arch of bus_master2 is
 begin
-  Bus_Mux_Proc : process (rst, clk1, clk2, clk1a, clk2a)
+  Bus_Mux_Proc : process (rst, ibus1, ibus2)
     variable disp : std_logic_vector (11 downto 0); 
     variable fram : std_logic_vector (11 downto 0); 
     variable mux_out : s79_word;
@@ -75,11 +77,11 @@ begin
     end if;
   end process Bus_Mux_Proc;
   
-  Bus_Sense_Proc : process (rst, clk2)
+  Bus_Sense_Proc : process (rst, obus)
   begin
     if (rst = '1') then
       obus.bus_senses <= io_bus_senses_init;
-    elsif (rising_edge(clk2)) then
+    else
       if (obus.shared_bus_data.mark_bit = '1') then
         obus.bus_senses.mark_p <= '1';
       else

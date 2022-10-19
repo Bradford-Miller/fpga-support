@@ -2,7 +2,7 @@
 --                                               --
 -- Temporary registers to develop register code  --
 --                                               --
--- Time-stamp: <2022-09-20 17:18:03 Bradford W. Miller(on Boromir)>      --
+-- Time-stamp: <2022-10-18 16:20:25 Bradford W. Miller(on Boromir)>      --
 --                                               --
 -- ------------------------------------------------
 
@@ -17,6 +17,9 @@
 -- Note that this also delays getting the output shared between processes due
 -- to buffering. This ends up being critical for the (external) memory bus so
 -- we will move the memory bus gate logic here!! -- 8/18/22
+
+-- 10/18/22 try having bus be async to clock (sensitive to input changes only)
+-- to resolve some latency!
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -56,7 +59,7 @@ end entity bus_master7;
 
 architecture bus_arch of bus_master7 is
 begin
-  Bus_Mux_Proc : process (rst, clk1, clk2, clk1a, clk2a)
+  Bus_Mux_Proc : process (rst, ibus1, ibus2, ibus3, ibus4, ibus5, ibus6, ibus7, clk1a)
     variable disp : std_logic_vector (11 downto 0); 
     variable fram : std_logic_vector (11 downto 0); 
     variable mux_out : s79_word;
@@ -135,11 +138,11 @@ begin
     end if;
   end process Bus_Mux_Proc;
   
-  Bus_Sense_Proc : process (rst, clk2)
+  Bus_Sense_Proc : process (rst, obus)
   begin
     if (rst = '1') then
       obus.bus_senses <= io_bus_senses_init;
-    elsif (rising_edge(clk2)) then
+    else
       if (obus.shared_bus_data.mark_bit = '1') then
         obus.bus_senses.mark_p <= '1';
       else

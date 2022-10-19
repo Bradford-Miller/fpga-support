@@ -2,7 +2,7 @@
 --                                               --
 -- Temporary "library" to develop pla code       --
 --                                               --
--- Time-stamp: <2022-09-26 20:59:27 Bradford W. Miller(on Boromir)>      --
+-- Time-stamp: <2022-10-11 16:15:31 Bradford W. Miller(on Boromir)>      --
 --                                               --
 -- ------------------------------------------------
 
@@ -79,6 +79,8 @@ package plapkg is
   -- fields include the codes but also possibly other things so have a separate
   -- type
   subtype ucode_from_field is std_logic_vector(ceil_log2(from_codes) - 1 downto 0);
+  -- we really should make sure the to_field can also hold the sense encodings
+  -- (TBD)
   subtype ucode_to_field is std_logic_vector(ceil_log2(to_codes) - 1 downto 0);
 
   constant ucode_from_field_init : ucode_from_field := (others => '0');

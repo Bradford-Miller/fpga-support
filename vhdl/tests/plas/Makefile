@@ -8,11 +8,11 @@ GHDLFLAGS= --std=08
 #GHDLRUNFLAGS=
 # modified to generate a wave file BWM
 
-# right now, we wrap up on tick 00F, which ends at 150ns (0ns starts tick 1) Run one extra tick.
+# right now, we wrap up by tick 013, which ends by 200ns (0ns starts tick 1) Run one extra tick.
 # TBD: introduce a "halt and catch fire" microcode?? Might be useful for the actual processor too, since we
 # could test for it?
 
-GHDLRUNFLAGS= --stop-time=160ns --wave=behav-plas-1.GHW
+GHDLRUNFLAGS= --stop-time=210ns --wave=behav-plas-1.GHW
 
 # Default target : 
 all : init elab run
@@ -39,7 +39,7 @@ init: force
 	$(GHDL) -a $(GHDLFLAGS) ../common/my-pads.vhdl
 	$(GHDL) -a $(GHDLFLAGS) ../common/my-bus7.vhdl
 	$(GHDL) -a $(GHDLFLAGS) ../common/my-register.vhdl
-	$(GHDL) -a $(GHDLFLAGS) my-plas.vhdl
+	$(GHDL) -a $(GHDLFLAGS) ../common/my-plas.vhdl
 	$(GHDL) -a $(GHDLFLAGS) pla-test.vhdl
 
 force:

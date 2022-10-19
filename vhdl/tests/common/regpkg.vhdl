@@ -2,7 +2,7 @@
 --                                                                   --
 -- Temporary "library" to help develop register code                 --
 --                                                                   --
--- Time-stamp: <2022-09-26 21:03:46 Bradford W. Miller(on Boromir)>  --
+-- Time-stamp: <2022-10-05 16:28:16 Bradford W. Miller(on Boromir)>  --
 --                                                                   --
 -- --------------------------------------------------------------------
 
@@ -12,6 +12,7 @@ use ieee.numeric_std.all;
 
 package regpkg is
   -- bit encoding of register field in nanocode (see machine-wires.lisp)
+  -- nrc: nanocode register control
   constant nrc_from_star_bit            : natural := 0; -- 0x0001
   constant nrc_to_star_bit              : natural := 1; -- 0x0002
   constant nrc_from_to_star_bit         : natural := 2; -- 0x0004
@@ -46,7 +47,7 @@ package regpkg is
                                                 -- plapkg.vhdl
 
   constant ncode_register_controls_init : ncode_register_controls := ((others => '0'));
-  
+
   type io_bus_controls is record
     bc_set_mark         : std_logic;
     bc_set_unmark       : std_logic;
@@ -67,16 +68,35 @@ package regpkg is
                                                        bc_set_pointer => '0',
                                                        bc_set_type => '0');
 
+  -- bit encoding of TO field in microcode when representing sense bits for
+  -- conditionals (added 10/5/22)
+  -- (mbs: microcode bus sense)
+
+  -- a more complete solution would allow us to specify the register (inc. the
+  -- bus) and the related sense, but since it is sparse we would still want to
+  -- only encode those that are actually in use!
+  constant mbs_mark_p               : natural := 0; -- 0x01
+  constant mbs_type_not_pointer     : natural := 1; -- 0x02
+  constant mbs_frame_eq_zero        : natural := 2; -- 0x04
+  constant mbs_displacement_eq_zero : natural := 3; -- 0x08
+  -- NB: for our temporary test code we can only generate the first 4 bits (to
+  -- fit into our abbreviated TO field in the microcode representation)
+  -- later we'll have to be able to generate these and appropriate register
+  -- specific sense line references in the TO field!!
+  constant mbs_address_eq_zero      : natural := 4; -- 0x10
+  constant mbs_sub_error            : natural := 5; -- 0x20 -- not part of
+                                                    -- original chip!
+  
   type io_bus_senses is record
     -- these are ONLY used on the bus
-    mark_p              : std_logic;
-    type_not_pointer    : std_logic; -- next two rolled into one bit
-    frame_eq_zero       : std_logic;
+    mark_p               : std_logic;
+    type_not_pointer     : std_logic; -- next two rolled into one bit
+    frame_eq_zero        : std_logic;
     displacement_eq_zero : std_logic;
-    address_eq_zero     : std_logic;
-    sub_error           : std_logic;     -- added this to aid debug - something bad
-                                         -- (probably microcode) we can tie to an
-                                         -- external pin
+    address_eq_zero      : std_logic;
+    sub_error            : std_logic;     -- added this to aid debug - something bad
+                                          -- (probably microcode) we can tie to an
+                                          -- external pin
   end record io_bus_senses;
 
   -- shouldn't be needed 7/11/22
