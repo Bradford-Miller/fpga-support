@@ -33,13 +33,13 @@ init: force
 	# /usr/local/lib/ghdl/ieee/v08/../../src/ieee2008/std_logic_1164-body.vhdl
 	# /usr/local/lib/ghdl/ieee/v08/../../src/ieee2008/numeric_std.vhdl
 	# /usr/local/lib/ghdl/ieee/v08/../../src/ieee2008/numeric_std-body.vhdl
-	$(GHDL) -a $(GHDLFLAGS) ../common/regpkg.vhdl
-	$(GHDL) -a $(GHDLFLAGS) ../common/padpkg.vhdl
-	$(GHDL) -a $(GHDLFLAGS) ../common/plapkg.vhdl
-	$(GHDL) -a $(GHDLFLAGS) ../common/my-pads.vhdl
-	$(GHDL) -a $(GHDLFLAGS) ../common/my-bus7.vhdl
-	$(GHDL) -a $(GHDLFLAGS) ../common/my-register.vhdl
-	$(GHDL) -a $(GHDLFLAGS) ../common/my-plas.vhdl
-	$(GHDL) -a $(GHDLFLAGS) pla-test.vhdl
+	$(GHDL) -a $(GHDLFLAGS) ../common/regpkg.vhd
+	$(GHDL) -a $(GHDLFLAGS) ../common/padpkg.vhd
+	$(GHDL) -a $(GHDLFLAGS) ../common/plapkg.vhd
+	$(GHDL) -a $(GHDLFLAGS) ../common/my-pads.vhd
+	$(GHDL) -a $(GHDLFLAGS) ../common/my-bus7.vhd
+	$(GHDL) -a $(GHDLFLAGS) ../common/my-register.vhd
+	$(GHDL) -a $(GHDLFLAGS) ../common/my-plas.vhd
+	$(GHDL) -a $(GHDLFLAGS) pla-test.vhd
 
 force:

@@ -29,9 +29,9 @@ init: force
 	# /usr/local/lib/ghdl/ieee/v08/../../src/ieee2008/std_logic_1164-body.vhdl
 	# /usr/local/lib/ghdl/ieee/v08/../../src/ieee2008/numeric_std.vhdl
 	# /usr/local/lib/ghdl/ieee/v08/../../src/ieee2008/numeric_std-body.vhdl
-	$(GHDL) -a $(GHDLFLAGS) ../common/regpkg.vhdl
-	$(GHDL) -a $(GHDLFLAGS) reg-test.vhdl
-	$(GHDL) -a $(GHDLFLAGS) ../common/my-bus4.vhdl
-	$(GHDL) -a $(GHDLFLAGS) ../common/my-register.vhdl
+	$(GHDL) -a $(GHDLFLAGS) ../common/regpkg.vhd
+	$(GHDL) -a $(GHDLFLAGS) reg-test.vhd
+	$(GHDL) -a $(GHDLFLAGS) ../common/my-bus4.vhd
+	$(GHDL) -a $(GHDLFLAGS) ../common/my-register.vhd
 
 force:

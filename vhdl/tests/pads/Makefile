@@ -29,11 +29,11 @@ init: force
 	# /usr/local/lib/ghdl/ieee/v08/../../src/ieee2008/std_logic_1164-body.vhdl
 	# /usr/local/lib/ghdl/ieee/v08/../../src/ieee2008/numeric_std.vhdl
 	# /usr/local/lib/ghdl/ieee/v08/../../src/ieee2008/numeric_std-body.vhdl
-	$(GHDL) -a $(GHDLFLAGS) ../common/regpkg.vhdl
-	$(GHDL) -a $(GHDLFLAGS) ../common/padpkg.vhdl
-	$(GHDL) -a $(GHDLFLAGS) ../common/my-pads.vhdl
-	$(GHDL) -a $(GHDLFLAGS) ../common/my-bus6.vhdl
-	$(GHDL) -a $(GHDLFLAGS) ../common/my-register.vhdl
-	$(GHDL) -a $(GHDLFLAGS) pad-test.vhdl
+	$(GHDL) -a $(GHDLFLAGS) ../common/regpkg.vhd
+	$(GHDL) -a $(GHDLFLAGS) ../common/padpkg.vhd
+	$(GHDL) -a $(GHDLFLAGS) ../common/my-pads.vhd
+	$(GHDL) -a $(GHDLFLAGS) ../common/my-bus6.vhd
+	$(GHDL) -a $(GHDLFLAGS) ../common/my-register.vhd
+	$(GHDL) -a $(GHDLFLAGS) pad-test.vhd
 
 force:
