@@ -1,0 +1,79 @@
+# DO NOT LOAD this version of the file. A version with only the
+# actual nanocodes is in ncode_hex.txt
+
+# each line consists of ncode_pad, ncode_register, ncode_next
+# pad_bits: 14
+# register_bits: 10 
+# ncode max address: 16 (4 bits)
+
+# yes, my life would have been easier for hand assembling if each of these fields was a multiple of 4 bits (for the sake
+# of the hex)
+
+# anyway, so hex 3FFF-3FF-F or appended FFFFFFF would be all bits, and when we translate between these two we have to
+# right shift the bits in the first field into the top two bits of the second field to get the final code. (Fortunately
+# the reality is we will have a microcode compiler/assembler to do that for us once we implement the whole enchalada)
+
+# some nanocode to hand build for our testbench:
+;(defnano (microlisp-shared::no-op)
+;  (() ()))
+;address 0: 0000-000-0
+0000000
+;(defnano (microlisp-shared::mover) ; move between registers (specified by the microcode)
+;    ((from* to*) ()))
+;address 1: 0000-003-0
+0000030
+;(defnano (microlisp-shared::do-car)
+;  ((from*) (ale)) [set_memory_pads]
+;  ((to*) (read))) [get_memory_pads]
+;address 2: 1005-001-3
+;address 3: 200A-002-0
+4014013
+8028020
+;(defnano (microlisp-shared::do-cdr)
+;   ((from*) (ale))    
+;  ((to*) (read cdr)))
+;address 4: 1005-001-5 [set_memory_pads, ale_pad, set_run_nano]
+;address 5: 202A-002-0 [get_memory_pads, cdr_pad, read_pad, clear_run_nano]
+4014015
+80A8020
+;(defnano (microlisp-shared::write-car)
+;  ((from-to*) (ale))
+;  ((from* unmark!-bus) (write)))
+;address 6: 1005-004-7
+;address 7: 1012-081-0
+4014047
+4048810
+;(defnano (microlisp-shared::write-and-mark-cdr) ; car in use
+;  ((from-to*) (ale clear-gc)) ; setting mark means we can clear the gc-needed pad
+;  ((from* mark!-bus) (write cdr)))
+;address 8: 1105-004-9
+;address 9: 1032-041-0
+4414049
+40C8410
+# current nanocode doesn't have instructions to load constants (but possibly should - we haven't implemented anything
+# beyond APPEND after all). Let's add one here.
+
+;(defnano (microlisp-shared::load)
+;   ((from-const* to*) ())) ; from is not a register but a constant, move to the to register!
+;address A: 0000-012-0
+0000120
+
+# add additional ncode to test conditionals
+# the FROM register (if set) is loaded onto the bus, the TO field is taken as a condition instead of a register.
+# the sense wires are ORed and affect the low order bit for the microcontroller's next PC.
+;(defnano (microlisp-shared::sense-and-branch-const)
+;   ((from*) (set-condition))
+;address B: 0201-001-0 [conditional_pad]
+0800010
+
+;
+;
+# fill out to ncode_max_address
+;address C: 0
+0000000
+;address D: 0
+0000000
+;address E: 0
+0000000
+;address F: 0
+0000000

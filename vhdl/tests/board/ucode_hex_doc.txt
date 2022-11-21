@@ -1,0 +1,78 @@
+# DO NOT LOAD this version of the file. A version with only the ucode as hex
+# is in ucode_hex.txt
+
+# each line consists of ucode_next, ucode_nano, ucode_from, and ucode_to.
+# (where ucode_nano is the address of the nano-op)
+# ucode max address: 16
+# ncode max address: 16
+# boot load address: 1
+# from_register_code: 2 (reg1, reg2), but increase to 8 bits so we can have interesting constants (from_codes = 255)
+# to_register_code: 3 (reg1, reg2, reg3), but increase to 4 bits so we can do easy math (to_codes = 15)
+# so hex F-F-FF-F or appended fffff would be all bits
+
+# our microcode program for the testbench:
+
+# skip address 0 (noop/loop)
+;A0
+00000
+# ((from-const 17) (to *reg1*) load)
+;A1 2-A-17-1
+2A171
+# ((from-const 31) (to *reg2*) load)
+;A2 3-A-31-2
+3A312
+# ((from *reg2*) (to *reg1*) write-car) ; (rplaca (fetch *reg1*) (fetch *reg2*)) ; address 17 should be affected
+;A3 4-6-02-1
+46021
+# ((from-const 42) (to *reg2*) load)
+;A4 5-A-42-2
+5A422
+# ((from *reg2*) (to *reg1*) write-and-mark-cdr)
+;A5 6-8-02-1
+68021
+# ((from *reg1*) (to *reg3*) do-car)
+;A6 7-2-01-3
+72013
+# ((from *reg1*) (to *reg3*) do-cdr)
+;A7 8-4-01-3
+84013
+
+# add additional ucode to test conditionals
+# note conditional fail should be to an EVEN opcode address and success to the following ODD opcode address!
+# note that this should SUCCEED so we expect reg3 to be unchanged (preload it with something distinguished
+# ((from-const 77) (to *reg3*) load)
+;A8 9-A-77-3
+9A773
+# ((from *reg1*) (branch displacement=0-bus A10 A11))
+# each line consists of ucode_next, ucode_nano, ucode_from, and ucode_to.
+;A9 A-B-01-8
+AB018
+# fail: put reg1 into reg3
+# NB: the FAIL address is the "next" address in the branch and should be an EVEN address (low order address bit 0)
+#     in real code this will typically be a goto/jump
+#((from *reg1*) (to *reg3*) load)
+;A10 B-1-01-3
+B1013
+# succeed (well really both): put reg1 into reg2
+# NB: should be address +1 from the fail address
+#((from *reg1*) (to *reg2*) load)
+;A11 C-1-01-2
+C1012
+# now try to make it fail (well we would but we'd need larger constants that stuff things into the diplacement part of
+# the register) so let's just go with the succeed case for now ;-)
+# ((from-const 77777) (to *reg1*) load)
+;A12 0
+00000
+# ((from *reg1*) (branch displacement=0-bus A14 A15)
+;A13 0
+00000
+# fail: put reg1 into reg3
+#((from *reg1*) (to *reg3*) load)
+;A14 0
+00000
+# succeed (well really both): put reg1 into reg2
+#((from *reg1*) (to *reg2*) load)
+;A15 0
+00000
+# now we (would) expect ALL 3 registers to have 77777!
+# TEST END
