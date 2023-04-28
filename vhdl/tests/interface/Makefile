@@ -4,20 +4,22 @@
 # ghdl --gen-makefile --std=08 tb_register_1 behav_reg_1
 
 GHDL=ghdl
-GHDLFLAGS= --std=08
+GHDLBASEFLAGS=
+# use pre 08 std for test as protected type needed for shared RAM is more complex
+GHDLFLAGS= # --std=08
 # modified to generate a wave file BWM
-GHDLRUNFLAGS= --stop-time=220ns --wave=behav-reg-1.GHW
+GHDLRUNFLAGS= --stop-time=600ns --wave=behav-int-test-1.GHW
 
-# Default target : all
-all : init elab run
+# Default target : elaborate
+all : elab
 
 # Elaborate target.  Almost useless
 elab : force
-	$(GHDL) -c $(GHDLFLAGS) -e tb_register_1 behav_reg_1
+	$(GHDL) -c $(GHDLFLAGS) -e int_test_tb_1 behav_int_test_tb_1
 
 # Run target
 run : force
-	$(GHDL) -c $(GHDLFLAGS) -r tb_register_1 behav_reg_1 $(GHDLRUNFLAGS)
+	$(GHDL) -c $(GHDLFLAGS) -r int_test_tb_1 behav_int_test_tb_1 $(GHDLRUNFLAGS)
 
 # Targets to analyze libraries
 init: force
@@ -27,9 +29,10 @@ init: force
 	# /usr/local/lib/ghdl/ieee/v08/../../src/ieee2008/std_logic_1164-body.vhdl
 	# /usr/local/lib/ghdl/ieee/v08/../../src/ieee2008/numeric_std.vhdl
 	# /usr/local/lib/ghdl/ieee/v08/../../src/ieee2008/numeric_std-body.vhdl
-	$(GHDL) -a $(GHDLFLAGS) ../common/regpkg.vhd
-	$(GHDL) -a $(GHDLFLAGS) reg-test.vhd
-	$(GHDL) -a $(GHDLFLAGS) ../common/my-bus2.vhd
-	$(GHDL) -a $(GHDLFLAGS) ../common/my-register.vhd
+	$(GHDL) -a $(GHDLFLAGS) gpio-stuff.vhd
+	# there's two versions, use the INTERNAL BRAM version first as the testbed is more straightforward
+	$(GHDL) -a $(GHDLFLAGS) bram-int.vhd 
+	$(GHDL) -a $(GHDLFLAGS) int-test-int.vhd
+	$(GHDL) -a $(GHDLFLAGS) int-test-int-tb.vhd
 
 force:

@@ -1,5 +1,5 @@
 # VHDL Generation Tests
-#### Time-stamp: <2022-10-19 14:41:47 Bradford W. Miller(on Boromir)>
+#### Time-stamp: <2023-04-11 14:00:16 gorbag>
 
 For the most part, this directory contains handwritten tests in VHDL that can
 be run in ghdl and analyzed with gtkwave. The intent is to explore what the
@@ -8,6 +8,31 @@ declarations (e.g. fields in the word, register capabilities, pad setup and
 hold times, etc.)
 
 ## Status
+
+As of 4-11-23, I've been spending the last couple months figuring out how to
+run microblaze and linux (petalinux) on the Arty board. That was successful a
+couple weeks ago, so then I shifted focus to how to interface arbitrary(?) VHDL
+code so it's accessible to microblaze (including under linux).
+
+At this point, the options seem to be to create an AXI4 or AXI4-lite interface
+to the VHDL code (which seems very complex at least for full up AXI4),
+interface to various signals using GPIO IP, and/or use dual-ported BRAM which
+has an IP generaotr (Block Memory Generator) and can be interfaces to AXI to
+BRAM IP (for access by microblaze) and then use the other port for the
+interface to VHDL (in particular the scheme processor). The idea is to
+eventually get to the point where similar to MIT's PDP-10 which used a PDP-11
+to provide I/O services, we can use a microblaze based linux system on the Arty
+to provide I/O, while running the scheme processor out of BRAM the linux system
+(or just bare microblaze if we don't need more advanced tools like TCP). 
+
+My main purpose at this point is to have a convenient way to test the scheme
+chip by having some kind of wrapper proccessor system that can then use various
+PMODs or even a full-blown linux based terminal shell without having to develop
+a lot of i/o (which would have to be memory mapped anyway) for the scheme
+processor. 
+
+The interface subdirectory contains some tests as I try to develop a working
+interface between VHDL and the IP-based tools Vivado supplies.
 
 As of 10-19-22, the test code for PLAs successfully runs and works for
 conditionals (well, a successful conditional testing a bus condition - I'd have
@@ -147,6 +172,13 @@ while the original code seems to have been triggered by clock levels and delays
 necessitating some minor changes to the published timing (so certain signals
 are stable over the edge of the clock rather than during or only on the latter
 half of a clock).
+
+### interface
+
+New (see status): some test code that we can interface via the IP editor to
+block memory, GPIO, etc. to allow the scheme memory subsystem and controls to
+interface to existing microblaze tools without having to reinvent everything
+(and to make it much easier to test the processor!).
 
 #### Endnotes:
 
