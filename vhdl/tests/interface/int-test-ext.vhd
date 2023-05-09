@@ -1,8 +1,10 @@
 -- ------------------------------------------------------------------------
 --                                                                       --
--- Time-stamp: <2023-04-28 16:29:48 gorbag>      --
+-- Time-stamp: <2023-04-28 16:37:13 gorbag>                              --
 --                                                                       --
 --  This is a driver for interfaces we hope to access from microblaze!   --
+--                                                                       --
+-- This version uses EXTERNALLY defined BRAM                             --
 --                                                                       --
 -- ------------------------------------------------------------------------
 

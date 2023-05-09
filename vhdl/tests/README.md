@@ -1,5 +1,5 @@
 # VHDL Generation Tests
-#### Time-stamp: <2023-04-11 14:00:16 gorbag>
+#### Time-stamp: <2023-05-09 11:06:53 gorbag>
 
 For the most part, this directory contains handwritten tests in VHDL that can
 be run in ghdl and analyzed with gtkwave. The intent is to explore what the
@@ -17,7 +17,7 @@ code so it's accessible to microblaze (including under linux).
 At this point, the options seem to be to create an AXI4 or AXI4-lite interface
 to the VHDL code (which seems very complex at least for full up AXI4),
 interface to various signals using GPIO IP, and/or use dual-ported BRAM which
-has an IP generaotr (Block Memory Generator) and can be interfaces to AXI to
+has an IP generator (Block Memory Generator) and can be interfaces to AXI to
 BRAM IP (for access by microblaze) and then use the other port for the
 interface to VHDL (in particular the scheme processor). The idea is to
 eventually get to the point where similar to MIT's PDP-10 which used a PDP-11
@@ -178,7 +178,12 @@ half of a clock).
 New (see status): some test code that we can interface via the IP editor to
 block memory, GPIO, etc. to allow the scheme memory subsystem and controls to
 interface to existing microblaze tools without having to reinvent everything
-(and to make it much easier to test the processor!).
+(and to make it much easier to test the processor!). I've created two versions
+here so far, one with externally defined BRAM (i.e. using the block memory
+generator IP), and one where the bram is internally defined and only an
+interface is present we can then wire to the microblaze appropriately
+(e.g. using a bram controller IP) (so we can compare efficiency or whatever in
+the two approaches).
 
 #### Endnotes:
 
