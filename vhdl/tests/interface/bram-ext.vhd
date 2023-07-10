@@ -6,7 +6,7 @@
 --                                                                       --
 -- ------------------------------------------------------------------------
 
-use std.env.all;
+-- use std.env.all;
     
 library ieee;
 use ieee.std_logic_1164.all;
@@ -42,8 +42,11 @@ end entity bram_io_ext;
 
 architecture behav_bram_io_1 of bram_io_ext is
   -- local signals
+  signal reading : std_logic := '0';
+  signal writing : std_logic := '0';
+
 begin
-  Echo_clk: process (clkb)
+  Echo_clk: process (clkin)
   begin
     clka <= clkin;
   end process Echo_clk;
@@ -65,33 +68,41 @@ begin
   -- data strobe on write coming after the address strobe as addr, din, and
   -- dout use shared pins in that model).
 
-  Bram_iop: process
+  Bram_iop: process(clkin)
   begin
     busy <= '0';
     read_data <= X"00000000";
-    loop
+    if rising_edge(clkin) then
       if (read_rq = '1') then
         ena <= '1';
         addra <= read_addr;
         busy <= '1';
-        wait until falling_edge(clkin);
-        -- bram should process this cycle
-        -- output should be ready
-        read_data <= doa;
-        busy <= '0';
-        ena <= '0';
+        reading <= '1';
       elsif (write_rq = '1') then
         ena <= '1';
         wea <= '1';
         addra <= write_addr;
         busy <= '1';
         dia <= write_data;
-        wait until falling_edge(clkin);
+      end if;
+    end if;
+
+    if falling_edge (clkin) then
+      -- obviously could be simplified, but this is test code so...
+      if (reading = '1') then
+        -- bram should process this cycle
+        -- output should be ready
         read_data <= doa;
         busy <= '0';
-        en <= '0';
-        we <= '0';
+        ena <= '0';
+        reading <= '0';
+      elsif (writing = '1') then
+        read_data <= doa;
+        busy <= '0';
+        ena <= '0';
+        wea <= '0';
+        writing <= '0';
       end if;
-    end loop;
+    end if;
   end process Bram_iop;
 end architecture behav_bram_io_1;

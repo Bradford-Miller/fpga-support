@@ -38,7 +38,7 @@ entity int_test_wrapper_1 is
 end entity int_test_wrapper_1;
 
 architecture behav_int_test_wrapper_1 of int_test_wrapper_1 is
-  component int_test_1
+  component int_test_ext
     port (
       clkin   : in  std_logic;
       status1 : out std_logic;
@@ -55,10 +55,12 @@ architecture behav_int_test_wrapper_1 of int_test_wrapper_1 is
       addra    : out std_logic_vector(5 downto 0);
       dia      : out std_logic_vector(31 downto 0);
       doa      : in  std_logic_vector(31 downto 0));
-  end component int_test_1;
+  end component int_test_ext;
+
+  signal toptick : unsigned(31 downto 0);
 
 begin
-  My_Int_test: int_test_1
+  My_Int_test: int_test_ext
     port map (
       clkin => clkin,
       status1 => status1,
@@ -74,4 +76,12 @@ begin
       addra => addra,
       dia => dia,
       doa => doa);
-end architecure behav_int_test_wrapper_1;
+  
+  Tick_count_0: process (clkin)
+  begin
+    if rising_edge(clkin) then
+      toptick <= toptick + 1;
+      end if;
+  end process Tick_count_0;
+  
+end architecture behav_int_test_wrapper_1;

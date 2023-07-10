@@ -17,8 +17,7 @@ use ieee.numeric_std.all;
 -- library work;
 -- use work.regpkg.all; -- temporary register types
 
-
-entity int_test_1 is
+entity int_test_ext is
   port (
     clkin   : in  std_logic;
     status1 : out std_logic;
@@ -28,8 +27,6 @@ entity int_test_1 is
     c_start : in  std_logic;
     c_wait  : in  std_logic;
 
-    tick : in unsigned(11 downto 0);
-    
     -- bram interface (at least what we're using)
     clka     : out std_logic;
     ena      : out std_logic;
@@ -37,9 +34,9 @@ entity int_test_1 is
     addra    : out std_logic_vector(5 downto 0);
     dia      : out std_logic_vector(31 downto 0);
     doa      : in  std_logic_vector(31 downto 0));
-end entity int_test_1;
+end entity int_test_ext;
     
-architecture behav_int_test_1 of int_test_1 is
+architecture behav_int_test_1 of int_test_ext is
   component bram_io_ext
     port (
       clkin      : in  std_logic; 
@@ -78,6 +75,7 @@ architecture behav_int_test_1 of int_test_1 is
   signal read_data  : std_logic_vector(31 downto 0) := X"00000000";
   signal write_data : std_logic_vector(31 downto 0) := X"00000000";
   signal busy       : std_logic;
+  signal tick       : unsigned(11 downto 0) := x"000";
   
 begin
   My_Bram : bram_io_ext
@@ -107,6 +105,13 @@ begin
       c_start => c_start,
       c_wait => c_wait);
 
+  Tick_count: process(clkin)
+  begin
+    if rising_edge(clkin) then
+      tick <= tick + 1;
+    end if;   
+  end process Tick_count;
+    
   Int_test: process
   begin
     -- for the purposes of this test, we wait for c_start, then step through
@@ -125,6 +130,8 @@ begin
     -- accessible to the microblaze, allowing us to mix IP with our VHDL code!
 
     L0: loop
+      report "int_test: waiting for c_start";
+
       wait until (c_start = '1');
       read_addr <= "000000"; -- we could use a loop iterator for this, of course
       write_addr <= "000000";
@@ -133,19 +140,21 @@ begin
       status3 <= '0';     
       status4 <= '0';
 
-      report "int_test: waiting for c_start";
-      wait until ((c_start = '1') AND rising_edge(clkb));
+      wait until (rising_edge(clkin));
 
       report "int_test: c_start! tick: " & integer'image(to_integer(unsigned(tick)));
+      wait until (falling_edge(clkin)); -- next clock  -- clumsy, should just
+                                        -- implement signals to indicate what
+                                        -- stage we're in...
 
       L1: loop
         report "int_test: waiting until bram not busy. tick: " & integer'image(to_integer(unsigned(tick)));
-        wait until ((busy = '0') AND rising_edge(clkb));
+        wait until ((busy = '0') AND rising_edge(clkin));
         read_rq <= '1';
         -- wait for memory to cycle
         wait until (busy = '1');
         read_rq <= '0';
-        wait until ((busy = '0') AND rising_edge(clkb)); -- read_data should now be valid
+        wait until ((busy = '0') AND rising_edge(clkin)); -- read_data should now be valid
 
         report "int_test: reading data from bram: "
           & integer'image(to_integer(unsigned(read_addr)))
@@ -156,7 +165,7 @@ begin
         write_rq <= '1'; -- already have the address setup
         -- wait for memory to cycle
         report "int_test: writing bram, waiting busy. tick: " & integer'image(to_integer(unsigned(tick)));
-        wait until ((busy = '1') AND rising_edge(clkb));
+        wait until ((busy = '1') AND rising_edge(clkin));
         write_rq <= '0';
 
         -- increment the address, check that we haven't been told to wait
