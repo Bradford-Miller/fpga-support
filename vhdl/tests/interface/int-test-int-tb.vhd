@@ -1,7 +1,7 @@
 
 -- ------------------------------------------------------------------------
 --                                                                       --
--- Time-stamp: <2023-04-28 14:24:18 gorbag>                              --
+-- Time-stamp: <2023-08-01 12:38:45 gorbag>                              --
 --                                                                       --
 --  This is a testbed for the  driver interfaces (Bram, GPIO)            --
 --                                                                       --
@@ -20,18 +20,16 @@ use ieee.numeric_std.all;
 entity int_test_tb_1 is
 end entity int_test_tb_1;
 
+use work.my_gpio_interface.all;
+
 architecture behav_int_test_tb_1 of int_test_tb_1 is
-  component int_test_1
+  component int_test_int
     port (
       clkb    : in  std_logic;
-      status1 : out std_logic;
-      status2 : out std_logic;
-      status3 : out std_logic;
-      status4 : out std_logic;
-      c_start : in  std_logic;
-      c_wait  : in  std_logic;
+      t_status : out gpio_outputs;
+      t_controls : in gpio_inputs;
 
-      tick    : in unsigned(11 downto 0);
+      reset : in std_logic;
 
       -- bram interface (at least what we're using)
       clka     : in std_logic;
@@ -40,23 +38,19 @@ architecture behav_int_test_tb_1 of int_test_tb_1 is
       addra    : in std_logic_vector(5 downto 0);
       dia      : in std_logic_vector(31 downto 0);
       doa      : out std_logic_vector(31 downto 0));
-  end component int_test_1;
+  end component int_test_int;
 
   -- DUT inputs
   signal clkb : std_logic := '0';
   signal clka : std_logic := '0';
-  signal c_start : std_logic := '0';
-  signal c_wait : std_logic := '0';
+  signal t_controls : gpio_inputs := (others => '0');
   signal ena : std_logic := '0';
   signal wea : std_logic := '0';
   signal addra : std_logic_vector(5 downto 0) := "000000";
   signal dia : std_logic_vector(31 downto 0) := X"00000000";
 
   -- DUT outputs
-  signal status1 : std_logic;
-  signal status2 : std_logic;
-  signal status3 : std_logic;
-  signal status4 : std_logic;
+  signal t_status : gpio_outputs;
   signal doa : std_logic_vector(31 downto 0);
 
   constant CLOCK_PERIOD : time := 500 ps;
@@ -65,16 +59,14 @@ architecture behav_int_test_tb_1 of int_test_tb_1 is
                                                  -- of where we are in the test!
   signal rst : std_logic := '0';
 begin
-  DUT : int_test_1
+  DUT : int_test_int
     port map (
       clkb => clkb,
-      status1 => status1,
-      status2 => status2,
-      status3 => status3,
-      status4 => status4,
-      c_start => c_start,
-      c_wait => c_wait,
-      tick => tick,
+      t_status => t_status,
+      t_controls => t_controls,
+
+      reset => rst,
+      
       clka => clka,
       ena => ena,
       wea => wea,
@@ -183,7 +175,7 @@ begin
     
     -- start circuit
     report "TB: setting c_start at tick " & integer'image(to_integer(unsigned(tick)));
-    c_start <= '1';
+    t_controls.c_start <= '1';
     
     -- int-test-int takes a clock to read and then another clock to write
     -- (maybe even two each because it uses the busy signal to check). Anyway,
@@ -191,14 +183,14 @@ begin
     -- to update all memory so we can check that c_wait is working.
     wait until tick = 200;
     report "TB: injecting wait at tick " & integer'image(to_integer(unsigned(tick)));
-    c_wait <= '1';
+    t_controls.c_wait <= '1';
     -- wait a few ticks so we can check it on the scope
     wait until tick = 220;
     report "TB: clearing wait, waiting until completed at tick " & integer'image(to_integer(unsigned(tick)));
-    c_wait <= '0';
+    t_controls.c_wait <= '0';
     -- now run to completion
-    wait until status1 = '1';
-    c_start <= '0';
+    wait until t_status.status1 = '1';
+    t_controls.c_start <= '0';
 
     -- dump memory, for now to the console
     report "TB: done, dumping memory post-test";

@@ -29,7 +29,7 @@ init: force
 	# /usr/local/lib/ghdl/ieee/v08/../../src/ieee2008/std_logic_1164-body.vhdl
 	# /usr/local/lib/ghdl/ieee/v08/../../src/ieee2008/numeric_std.vhdl
 	# /usr/local/lib/ghdl/ieee/v08/../../src/ieee2008/numeric_std-body.vhdl
-	$(GHDL) -a $(GHDLFLAGS) gpio-stuff.vhd
+	$(GHDL) -a $(GHDLFLAGS) my_gpio_interface.vhd
 	# there's two versions, use the INTERNAL BRAM version first as the testbed is more straightforward
 	$(GHDL) -a $(GHDLFLAGS) bram-int.vhd 
 	$(GHDL) -a $(GHDLFLAGS) int-test-int.vhd
