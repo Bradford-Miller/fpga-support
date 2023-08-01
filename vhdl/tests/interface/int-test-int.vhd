@@ -1,12 +1,15 @@
 -- ------------------------------------------------------------------------
 --                                                                       --
--- Time-stamp: <2023-04-28 16:29:49 gorbag>                              --
+-- Time-stamp: <2023-08-01 12:35:50 gorbag>                              --
 --                                                                       --
 --  This is a driver for interfaces we hope to access from microblaze!   --
 --                                                                       --
 --  This version uses INTERNALLY defined BRAM                            --
 --                                                                       --
 -- ------------------------------------------------------------------------
+--
+-- 7/31/23 As we did for int-test-ext, make a state machine (copy code and
+-- modify as needed).
 
 -- use pre 08 std for test
 -- use std.env.all;
@@ -15,21 +18,19 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
+use work.my_gpio_interface.all;
+
 -- library work;
 -- use work.regpkg.all; -- temporary register types
 
 
-entity int_test_1 is
+entity int_test_int is
   port (
     clkb   : in  std_logic;
-    status1 : out std_logic;
-    status2 : out std_logic;
-    status3 : out std_logic;
-    status4 : out std_logic;
-    c_start : in  std_logic;
-    c_wait  : in  std_logic;
+    t_status : out gpio_outputs;
+    t_controls : in  gpio_inputs;
 
-    tick : in unsigned(11 downto 0); -- used for debug messages
+    reset  : in std_logic;
 
     -- bram interface (at least what we're using)
     clka     : in std_logic;
@@ -38,9 +39,9 @@ entity int_test_1 is
     addra    : in std_logic_vector(5 downto 0);
     dia      : in std_logic_vector(31 downto 0);
     doa      : out  std_logic_vector(31 downto 0));
-end entity int_test_1;
+end entity int_test_int;
     
-architecture behav_int_test_1 of int_test_1 is
+architecture behav_int_test_int_1 of int_test_int is
   component bram_io_int
     port (
       clkb       : in  std_logic; 
@@ -61,17 +62,6 @@ architecture behav_int_test_1 of int_test_1 is
       doa   : out std_logic_vector(31 downto 0)); -- output from the bram, 32 bits wide
   end component bram_io_int;
 
-  component gpio_stuff
-    port (
-      status1 : out std_logic;
-      status2 : out std_logic;
-      status3 : out std_logic;
-      status4 : out std_logic;
-
-      c_start : in  std_logic;
-      c_wait  : in  std_logic);
-  end component gpio_stuff;
-
   signal read_rq    : std_logic := '0';
   signal write_rq   : std_logic := '0';
   signal read_addr  : std_logic_vector(5 downto 0) := "000000";
@@ -79,7 +69,20 @@ architecture behav_int_test_1 of int_test_1 is
   signal read_data  : std_logic_vector(31 downto 0) := X"00000000";
   signal write_data : std_logic_vector(31 downto 0) := X"00000000";
   signal busy       : std_logic;
+  signal tick       : unsigned(11 downto 0) := x"000"; -- used for debug messages
   
+  -- test loop track states
+  type state_labels is (  Idle,
+                          Started,
+                          Rd_Rq,
+                          Rd_Proc,
+                          Wr_Rq,
+                          Wr_Proc,
+                          Hold,
+                          Done
+                       );
+  signal current_state : state_labels;
+
 begin
   My_Bram : bram_io_int
     port map (
@@ -99,98 +102,109 @@ begin
       dia => dia,
       doa => doa);
 
-  My_GPIO : gpio_stuff
-    port map (
-      status1 => status1,
-      status2 => status2,
-      status3 => status3,
-      status4 => status4,
-      c_start => c_start,
-      c_wait => c_wait);
-
-  Int_test: process 
+  Int_test: process(clkb)
   begin
-    -- for the purposes of this test, we wait for c_start, then step through
-    -- memory performing a rotation (so we can easily detect that we did
-    -- something) e.g. "1000" -> "0001" and "0001" -> "0010" etc.
-    -- we change the state of status1 whenever we encounter "1111" on read, and
-    -- we turn on status2 while we are not idle. We thus turn off status2 when
-    -- we are either waiting or we are done.
+    if rising_edge(clkb) then
+      tick <= tick + 1;
 
-    -- if c_wait is asserted, we temporarily become idle until it is cleared
-    -- then go on. When c_start is asserted we start processing, but we won't
-    -- restart processing until it cycles (i.e. goes off and comes back on). 
+      if reset = '1' then
+        -- for the purposes of this test, we wait for c_start, then step through
+        -- memory performing a rotation (so we can easily detect that we did
+        -- something) e.g. "1000" -> "0001" and "0001" -> "0010" etc.
+        -- we change the state of status1 whenever we encounter "1111" on read, and
+        -- we turn on status2 while we are not idle. We thus turn off status2 when
+        -- we are either waiting or we are done.
+        
+        -- if c_wait is asserted, we temporarily become idle until it is cleared
+        -- then go on. When c_start is asserted we start processing, but we won't
+        -- restart processing until it cycles (i.e. goes off and comes back on). 
+        
+        -- obviously this isn't how we would normally use the BRAM, it's just a
+        -- test to make sure we can communicate with an external BRAM which is also
+        -- accessible to the microblaze, allowing us to mix IP with our VHDL code!
 
-    -- obviously this isn't how we would normally use the BRAM, it's just a
-    -- test to make sure we can communicate with an external BRAM which is also
-    -- accessible to the microblaze, allowing us to mix IP with our VHDL code!
+        read_addr <= "000000"; -- we could use a loop iterator for this, of course
+        write_addr <= "000000";
+        t_status.status1 <= '0';
+        t_status.status2 <= '0';
+        t_status.status3 <= '0';
+        t_status.status4 <= '0';
+        current_state <= Idle;
+      else
+        case (current_state) is
+          when Idle =>
+            if t_controls.c_start = '1' then
+              report "int_test: c_start! tick: " &
+                integer'image(to_integer(unsigned(tick)));
+              current_state <= Started;
+            end if;
 
-    L0: loop
-      read_addr <= "000000"; -- we could use a loop iterator for this, of course
-      write_addr <= "000000";
-      status1 <= '0';
-      status2 <= '0';
-      status3 <= '0';
-      status4 <= '0';
+          when Started =>
+            -- read
+            read_rq <= '1';
+            current_state <= Rd_Rq;
 
-      report "int_test: waiting for c_start";
-      wait until ((c_start = '1') AND rising_edge(clkb));
+          when Rd_Rq =>
+            if busy = '1' then
+              read_rq <= '0';
+              current_state <= Rd_Proc;
+              report "int_test: waiting until bram not busy. tick: " &
+                integer'image(to_integer(unsigned(tick)));
+            end if;
 
-      report "int_test: c_start! tick: " & integer'image(to_integer(unsigned(tick)));
-      L1: loop
-        report "int_test: waiting until bram not busy. tick: " & integer'image(to_integer(unsigned(tick)));
-        wait until ((busy = '0') AND rising_edge(clkb));
-        read_rq <= '1';
-        -- wait for memory to cycle
-        report "int_test: waiting until bram sees request and is busy. tick: " & integer'image(to_integer(unsigned(tick)));
-        wait until ((busy = '1') AND rising_edge(clkb));
-        read_rq <= '0';
-        report "int_test: waiting until bram not busy again. tick: " & integer'image(to_integer(unsigned(tick)));
-        wait until ((busy = '0') AND rising_edge(clkb)); -- read_data should now be valid
+          when Rd_Proc =>
+            if busy = '0' then
+              -- get read result
+              report "int_test: reading data from bram: "
+                & integer'image(to_integer(unsigned(read_addr)))
+                & "->"
+                & integer'image(to_integer(unsigned(read_data)))
+                & ", doing left shift";
+              write_data <= std_logic_vector(shift_left(unsigned(read_data), 1)); -- change it in a way we can detect
+              write_rq <= '1'; -- already have the address setup
+              current_state <= Wr_Rq;
+            end if;
 
-        report "int_test: reading data from bram: "
-          & integer'image(to_integer(unsigned(read_addr)))
-          & "->"
-          & integer'image(to_integer(unsigned(read_data)))
-          & ", doing left shift";
-        write_data <= std_logic_vector(shift_left(unsigned(read_data), 1)); -- change it in a way we can detect
-        write_rq <= '1'; -- already have the address setup
-        -- wait for memory to cycle
-        report "int_test: writing bram, waiting busy. tick: " & integer'image(to_integer(unsigned(tick)));
-        wait until ((busy = '1') AND rising_edge(clkb));
-        write_rq <= '0';
+          when Wr_Rq =>
+            if busy = '1' then
+              report "int_test: writing bram, waiting busy. tick: "
+                & integer'image(to_integer(unsigned(tick)));
+              write_rq <= '0';
+              current_state <= Wr_Proc;
+            end if;
 
-        -- don't really need to wait for write to finish, we can set next
-        -- request up
-        --wait until ((busy = '0') AND rising_edge(clkb)); -- hopefully that wrote it!
+          when Wr_Proc =>
+            if busy = '0' then
+              -- increment the address, check that we haven't been told to wait
+              report "int_test: incrementing addresses (read_addr: "
+                & integer'image(to_integer(unsigned(read_addr)))
+                & "), go loop. tick: "  & integer'image(to_integer(unsigned(tick)));
+              read_addr <= std_logic_vector(unsigned(read_addr) + 1);
+              write_addr <= std_logic_vector(unsigned(write_addr) + 1);
 
-        -- increment the address, check that we haven't been told to wait
-        report "int_test: incrementing addresses (read_addr: "
-          & integer'image(to_integer(unsigned(read_addr)))
-          & "), go loop. tick: "  & integer'image(to_integer(unsigned(tick)));
-        read_addr <= std_logic_vector(unsigned(read_addr) + 1);
-        write_addr <= std_logic_vector(unsigned(write_addr) + 1);
-
-        if (read_addr = "111111") then
-          report "int_test: did full cycle, show status1 as done. tick: " & integer'image(to_integer(unsigned(tick)));
-          status1 <= '1'; -- indicate we're done for now
-          exit L1;
-        end if;
-
-        -- check to see if we've been paused
-        if (c_wait = '1') then
-          -- we can't just wait until it's '0' as if it's already '0' we'll
-          -- wait until it's non-zero first, apparently!
-          wait until (c_wait = '0');
-        end if;
-      end loop L1;
-      
-      wait until (c_start = '0'); -- this won't catch turning it off then on while the
-                                  -- test is running, but we're not testing that.
-      report "int_test: prepping for next invoke. Tick: " & integer'image(to_integer(unsigned(tick)));
-    end loop L0;
-    -- should never reach here, we just wait for another cycle.
-    wait on c_start;
-    -- finish; -- new in std08
+              if (read_addr = "111111") then
+                t_status.status1 <= '1'; -- indicate we're done for now
+                current_state <= Done;
+              elsif t_controls.c_wait = '1' then
+                current_state <= Hold;
+              else
+                current_state <= Started;
+              end if;
+            end if;
+            
+          when Hold =>
+            if t_controls.c_wait = '0' then
+              current_state <= Started;
+            end if;
+            
+          when Done =>
+            if t_controls.c_start = '0' then
+              report "int_test: prepping for next invoke. Tick: "
+                & integer'image(to_integer(unsigned(tick)));
+              current_state <= Idle;
+            end if;
+        end case;
+      end if;
+    end if;
   end process Int_test;
-end architecture behav_int_test_1;
+end architecture behav_int_test_int_1;
