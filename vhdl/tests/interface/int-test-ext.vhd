@@ -1,6 +1,6 @@
 -- ------------------------------------------------------------------------
 --                                                                       --
--- Time-stamp: <2023-07-13 14:17:41 gorbag>                              --
+-- Time-stamp: <2023-07-24 13:25:06 gorbag>                              --
 --                                                                       --
 --  This is a driver for interfaces we hope to access from microblaze!   --
 --                                                                       --
@@ -125,10 +125,10 @@ begin
 
         read_addr <= "000000"; -- we could use a loop iterator for this, of course
         write_addr <= "000000";
-        t_status.status1 <= '0';
-        t_status.status2 <= '0';
-        t_status.status3 <= '0';     
-        t_status.status4 <= '0';
+        t_status.status1 <= '0'; -- finished
+        t_status.status2 <= '0'; -- waiting
+        t_status.status3 <= '0';        
+        t_status.status4 <= '0'; -- idle
         current_state <= Idle;
       else
         case (current_state) is
@@ -137,6 +137,9 @@ begin
               report "int_test: c_start! tick: " &
                 integer'image(to_integer(unsigned(tick)));
               current_state <= Started;
+              t_status.status4 <= '0';
+            else
+              t_status.status4 <= '1';
             end if;
 
           when Started =>
@@ -195,6 +198,9 @@ begin
           when Hold =>
             if t_controls.c_wait = '0' then
               current_state <= Started;
+              t_status.status2 <= '0';
+            else
+              t_status.status2 <= '1';
             end if;
             
           when Done =>
