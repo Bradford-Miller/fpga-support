@@ -1,6 +1,6 @@
 -- ------------------------------------------------------------------------
 --                                                                       --
--- Time-stamp: <2023-07-24 13:25:06 gorbag>                              --
+-- Time-stamp: <2023-11-08 16:31:40 gorbag>                              --
 --                                                                       --
 --  This is a driver for interfaces we hope to access from microblaze!   --
 --                                                                       --
@@ -51,6 +51,7 @@ architecture behav_int_test_1 of int_test_ext is
       read_data  : out std_logic_vector(31 downto 0);
       write_data : in  std_logic_vector(31 downto 0);
       busy       : out std_logic; -- let parent know we're busy handling the request
+      reset      : in  std_logic;
 
       -- outputs to the (external) bram IP, assume it's 64x32 (32 bits wide, 64 bits deep)
       clka  : out std_logic; 
@@ -94,6 +95,7 @@ begin
       read_data => read_data,
       write_data => write_data,
       busy => busy,
+      reset => reset,
       
       clka => clka,
       ena => ena,
@@ -127,7 +129,7 @@ begin
         write_addr <= "000000";
         t_status.status1 <= '0'; -- finished
         t_status.status2 <= '0'; -- waiting
-        t_status.status3 <= '0';        
+        t_status.status3 <= '0'; -- reserved       
         t_status.status4 <= '0'; -- idle
         current_state <= Idle;
       else
@@ -137,12 +139,14 @@ begin
               report "int_test: c_start! tick: " &
                 integer'image(to_integer(unsigned(tick)));
               current_state <= Started;
-              t_status.status4 <= '0';
             else
-              t_status.status4 <= '1';
+              t_status.status4 <= '1'; -- set idle
             end if;
 
           when Started =>
+            t_status.status2 <= '0'; -- not waiting
+            t_status.status4 <= '0'; -- not idle
+            t_status.status1 <= '0'; -- not finished
             -- read
             read_rq <= '1';
             current_state <= Rd_Rq;
@@ -186,7 +190,6 @@ begin
               write_addr <= std_logic_vector(unsigned(write_addr) + 1);
 
               if (read_addr = "111111") then
-                t_status.status1 <= '1'; -- indicate we're done for now
                 current_state <= Done;
               elsif t_controls.c_wait = '1' then
                 current_state <= Hold;
@@ -198,12 +201,12 @@ begin
           when Hold =>
             if t_controls.c_wait = '0' then
               current_state <= Started;
-              t_status.status2 <= '0';
             else
-              t_status.status2 <= '1';
+              t_status.status2 <= '1'; -- set waiting
             end if;
             
           when Done =>
+            t_status.status1 <= '1'; -- indicate we're done for now
             if t_controls.c_start = '0' then
               report "int_test: prepping for next invoke. Tick: "
                 & integer'image(to_integer(unsigned(tick)));

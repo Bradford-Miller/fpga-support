@@ -1,6 +1,6 @@
 -- ------------------------------------------------------------------------
 --                                                                       --
--- Time-stamp: <2023-04-28 14:39:40 gorbag>                              --
+-- Time-stamp: <2023-11-08 16:29:57 gorbag>                              --
 --                                                                       --
 --  This is a driver for externally defined BRAM                         --
 --                                                                       --
@@ -29,6 +29,7 @@ entity bram_io_ext is
     read_data  : out unsigned(31 downto 0);
     write_data : in  unsigned(31 downto 0);
     busy       : out std_logic; -- let parent know we're busy handling the request
+    reset      : in  std_logic;
     
     -- outputs to the bram IP, assume it's 64x32 (32 bits wide, 64 bits deep),
     -- we can rewrite this to use generics for that later
@@ -70,9 +71,14 @@ begin
 
   Bram_iop: process(clkin)
   begin
-    busy <= '0';
-    read_data <= X"00000000";
-    if rising_edge(clkin) then
+    if (reset = '1') then
+      busy      <= '0';
+      read_data <= X"00000000";
+      ena       <= '0';
+      wea       <= '0';
+      addra     <= "000000";
+      dia       <= X"00000000";
+    elsif rising_edge(clkin) then
       if (read_rq = '1') then
         ena <= '1';
         addra <= read_addr;
@@ -85,9 +91,7 @@ begin
         busy <= '1';
         dia <= write_data;
       end if;
-    end if;
-
-    if falling_edge (clkin) then
+    elsif falling_edge (clkin) then
       -- obviously could be simplified, but this is test code so...
       if (reading = '1') then
         -- bram should process this cycle
