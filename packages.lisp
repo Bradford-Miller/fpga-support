@@ -2,7 +2,7 @@
 (defvar *fpga-support-version-reporter-initializations* nil)
 
 (cl-lib:detailed-version-reporter "FPGA Dev Support packages" 0 2 4
-                                  "Time-stamp: <2022-05-02 16:41:53 gorbag>"
+                                  "Time-stamp: <2026-01-29 10:54:39 Bradford W. Miller (on Finwe.local)>"
                                   "defchip-bus"
                                   :initialization-list-symbol *fpga-support-version-reporter-initializations*)
 
@@ -228,6 +228,7 @@
 
 (defpackage :microlisp-shared
   (:documentation "language symbols we commonly have to import explicitly from microlisp pkg")
+  (:use) ; don't use anything
   (:import-from common-lisp t nil)
   (:export
    #:from #:to #:go-to #:branch #:branch-type #:from-type-const #:from-const #:tag

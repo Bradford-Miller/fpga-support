@@ -1,7 +1,7 @@
 (in-package :fpga-clocked)
 
 (fpga-support-version-reporter "FPGA Clocked State Support" 0 2 0
-                               "Time-stamp: <2022-03-18 15:09:02 gorbag>"
+                               "Time-stamp: <2025-11-07 17:52:54 Bradford W. Miller (on Finwe.local)>"
                                "0.2 release")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -21,9 +21,9 @@
 ;; conditions). This file has some overarching definitions and macros
 
 ;; we can consider all clocked systems to have a "tick" for the major
-;; cycle. Obviously most if not all systems will actually count the
-;; number of ticks, but we do so to make it easier to debug (e.g. we
-;; can record state on every tick).
+;; cycle. Obviously most if not all systems will never actually count
+;; the number of ticks, but we do so to make it easier to debug
+;; (e.g. we can record state on every tick).
 
 (defvar *tick* 0
   "Major clock cycle since simulation start")

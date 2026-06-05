@@ -24,15 +24,10 @@ A clear and concise description of what you expected to happen.
 If applicable, add screenshots to help explain your problem.
 
 **Desktop (please complete the following information):**
- - OS: [e.g. iOS]
- - Browser [e.g. chrome, safari]
- - Version [e.g. 22]
-
-**Smartphone (please complete the following information):**
- - Device: [e.g. iPhone6]
- - OS: [e.g. iOS8.1]
- - Browser [e.g. stock browser, safari]
- - Version [e.g. 22]
+ - OS: [e.g. MacOS 26.3]
+ - Lisp System [e.g. LispWorks Hobbyist]
+ - Lisp Version [e.g. 8.1.1]
+ - System Version [e.g. FPGA Support 0.2 Release, S79 Project 0.4 Release]
 
 **Additional context**
 Add any other context about the problem here.
